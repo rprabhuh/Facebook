@@ -25,11 +25,12 @@ object Main extends App {
       case Http.Bound(address) =>
         println(s"REST interface bound to $address")
       case Http.CommandFailed(cmd) =>
-        println("REST interface could not bind to " +
+        println("REST RestInterface could not bind to " +
           s"$host:$port, ${cmd.failureMessage}")
         system.shutdown()
     }
 
   // Create an actor for simulation
-  //var user1 = system.actorOf(Props[UserSimulator], name = "user1")
+  var user1 = system.actorOf(Props[UserSimulator], name = "user1")
+  user1 ! Start
 }
