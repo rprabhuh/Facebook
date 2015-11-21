@@ -31,132 +31,225 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
         }
       }
     } ~ 
-    path("Album") {
-      get {
-        complete("GET for Album")
+    pathPrefix("Album") {
+      pathEnd {
+        get {
+          complete("GET for Album")
+        }
       } ~
-      post {
-        complete("Let us POST for Album")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Album")
+        }
       }
     } ~
-    path("Comment") {
-      get {
-        complete("GET for Comment")
+    pathPrefix("Comment") {
+      pathEnd {
+        get {
+          complete("GET for Comment")
+        }
       } ~
-      post {
-        complete("Let us POST for Comment")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Comment")
+        }
       }
     } ~
-    path("Conversation") {
-      get {
-        complete("GET for Conversation")
+    pathPrefix("Conversation") {
+      pathEnd {
+        get {
+          complete("GET for Conversation")
+        }
       } ~
-      post {
-        complete("Let us POST for Conversation")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Conversation")
+        }
       }
     } ~
-    path("FriendList") {
-      get {
-        complete("GET for FriendList")
+    pathPrefix("FriendList") {
+      pathEnd {
+        get {
+          complete("GET for FriendList")
+        }
       } ~
-      post {
-        complete("Let us POST for FriendList")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for FriendList")
+        }
       }
     } ~
-    path("Group") {
-      get {
-        complete("GET for Group")
+    pathPrefix("Group") {
+      pathEnd {
+        get {
+          complete("GET for Group")
+        }
       } ~
-      post {
-        complete("Let us POST for Group")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Group")
+        }
       }
     } ~
-    path("GroupDoc") {
-      get {
-        complete("GET for GroupDoc")
+    pathPrefix("GroupDoc") {
+      pathEnd {
+        get {
+          complete("GET for GroupDoc")
+        }
       } ~
-      post {
-        complete("Let us POST for GroupDoc")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for GroupDoc")
+        }
       }
     } ~
-    path("Link") {
-      get {
-        complete("GET for Link")
+    pathPrefix("Link") {
+      pathEnd {
+        get {
+          complete("GET for Link")
+        }
       } ~
-      post {
-        complete("Let us POST for Link")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Link")
+        }
       }
     } ~
-    path("Message") {
-      get {
-        complete("GET for Message")
+    pathPrefix("Message") {
+      pathEnd {
+        get {
+          complete("GET for Message")
+        }
       } ~
-      post {
-        complete("Let us POST for Message")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Message")
+        }
       }
     } ~
-    path("Notification") {
-      get {
-        complete("GET for Notification")
+    pathPrefix("Notification") {
+      pathEnd {
+        get {
+          complete("GET for Notification")
+        }
       } ~
-      post {
-        complete("Let us POST for Notification")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Notification")
+        }
       }
     } ~
-    path("ObjectComments") {
-      get {
-        complete("GET for ObjectComments")
+    pathPrefix("ObjectComments") {
+      pathEnd {
+        get {
+          complete("GET for ObjectComments")
+        }
       } ~
-      post {
-        complete("Let us POST for ObjectComments")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for ObjectComments")
+        }
       }
     } ~
-    path("ObjectLikes") {
-      get {
-        complete("GET for ObjectLikes")
+    pathPrefix("ObjectLikes") {
+      pathEnd {
+        get {
+          complete("GET for ObjectLikes")
+        }
       } ~
-      post {
-        complete("Let us POST for ObjectLikes")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for ObjectLikes")
+        }
       }
     } ~
-    path("Page") {
-      get {
-        complete("GET for Page")
+    pathPrefix("Post") {
+      pathEnd {
+        get {
+          complete("GET for Post")
+        }
       } ~
-      post {
-        complete("Let us POST for Page")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Post")
+        }
       }
     } ~
-    path("Photo") {
-      get {
-        complete("GET for Photo")
+    pathPrefix("Page") {
+      pathEnd {
+        get {
+          complete("GET for Page")
+        }
       } ~
-      post {
-        complete("Let us POST for Photo")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Page")
+        }
       }
     } ~
-    path("Status") {
-      get {
-        complete("GET for Status")
+    pathPrefix("Photo") {
+      pathEnd {
+        get {
+          complete("GET for Photo")
+        }
       } ~
-      post {
-        complete("Let us POST for Status")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Photo")
+        }
       }
     } ~
-    path("Thread") {
-      get {
-        complete("GET for Thread")
+    pathPrefix("Status") {
+      pathEnd {
+        get {
+          complete("GET for Status")
+        }
       } ~
-      post {
-        complete("Let us POST for Thread")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Status")
+        }
       }
     } ~
-    path("User") {
-      get {
-        complete("GET for User")
+    pathPrefix("Thread") {
+      pathEnd {
+        get {
+          complete("GET for Thread")
+        }
       } ~
-      post {
-        complete("Let us POST for User")
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for Thread")
+        }
+      }
+    } ~
+    pathPrefix("User") {
+      pathEnd {
+        get {
+          complete("GET for User")
+        }
+      } ~
+      path(DoubleNumber) { (id) =>
+        post {
+          requestContext => println(id)
+          requestContext.complete("Let us POST for User")
+        }
       }
     }
 }
