@@ -1,38 +1,31 @@
 URI.path(/album/)
-GET
+GET - Fetches an album and all the photos in it.
 Input  : id
 Output : {
     cover_photo string          
-    created_time  datetime
     description string
     from  User
     location  string
     name  string
-    privacy starring
+    privacy string
     photos string
+    created_time  datetime
+    updated_time    datetime
 }
 
-POST
+POST - This creates an empty album if id is NULL. Updates the album is id is valid. Gives an error if id is invalid.
 Input :
 {
     id    string
-    can_upload    boolean
-    count   int
-    cover_photo   string
-    created_time    datetime
     description   string
     from    User
-    link    string
     location    string
     name    string
-    place   Page
     privacy   string
-    type    enum{app, cover, profile, mobile, wall, normal, album}
-    updated_time    datetime
 }
 Output : {Success_msg}
 
-DELETE
+DELETE - Deletes the album and all the photos inside it.
 Input  : id
 Output : {Success_msg}
 --------------------------------------------------------------------------------
@@ -67,7 +60,7 @@ Input  : id
 Output : {Success_msg}
 --------------------------------------------------------------------------------
 
-URI.path(/conversation/)
+URI.path(/Conversation/)
 GET
 Input  : id
 Output : {

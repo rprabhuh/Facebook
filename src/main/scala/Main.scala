@@ -10,7 +10,7 @@ object Main extends App {
 
   // the handler actcor replies to incoming HttpRequests
   val api = system.actorOf(Props[RestInterface], name = "handler")
-  
+
   //IO(Http) ! 	Http.Bind(handler, interface = "localhost", port = 8080)
 
   val host = "localhost"
@@ -31,6 +31,6 @@ object Main extends App {
     }
 
   // Create an actor for simulation
-  var user1 = system.actorOf(Props[UserSimulator], name = "user1")
+  var user1 = system.actorOf(Props(new UserSimulator(system)), name = "user1")
   user1 ! Start
 }

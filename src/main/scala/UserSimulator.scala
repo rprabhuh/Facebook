@@ -9,28 +9,42 @@ import spray.http._
 import HttpMethods._
 import MediaTypes._
 import spray.can.Http.RegisterChunkHandler
-
-import argonaut._, Argonaut._
+import spray.client.pipelining._
+import scala.concurrent.Future
+import spray.httpx.SprayJsonSupport._
+import spray.json.DefaultJsonProtocol._
+import spray.json.AdditionalFormats
 
 case class Start()
 
-class UserSimulator extends Actor {
+class UserSimulator(systemArg: ActorSystem) extends Actor {
 
-	//case class Album(id: String, description: String)
-	//implicit val formats = DefaultFormats
-
-	implicit def AlbumJson: EncodeJson[Album] =
-  		EncodeJson((x: Album) =>
-    		("id" := x.id) ->:
-    		("description" := x.description) ->: jEmptyObject)
+  val system = systemArg
+  import system.dispatcher
+  val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
+  //val pipeline2: HttpRequest => Future[HttpResponse] = sendReceive
 
   	def receive = {
 
   		case Start =>
   			println("Creating an Album..")
-  			val A = new Album("123", "First Album")
-  			val jsonAlbum = A.asJson
-    		var content = jsonAlbum.toString()
-    		println(content)
+
+        import FBJsonProtocol._
+
+  			var A = new Album("ABC123",
+            0,
+            "33",
+            "12:23:12",
+            "description: String",
+            "from: String",
+            "link: String",
+            "location: String",
+            "name: String",
+            "place: String",
+            "privacy: String",
+            "updated_time: String")
+
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
+        println("RESPONSE: " + response)
   }
 }

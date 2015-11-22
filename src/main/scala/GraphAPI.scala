@@ -11,6 +11,8 @@ import spray.util._
 import spray.can.Http.RegisterChunkHandler
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
+import scala.util.parsing.json._
+
 
 class RestInterface extends HttpServiceActor
   with GraphAPI {
@@ -22,9 +24,8 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
 
   implicit val timeout = Timeout(10 seconds)
   import FBJsonProtocol._
-
   def routes: Route =
-    
+
     path("") {
       get {
         log.info("Building get route")
@@ -32,19 +33,21 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
           "Welcome"
         }
       }
-    } ~ 
+    } ~
     pathPrefix("Album") {
       pathEnd {
         get {
           complete("GET for Album")
         }
-      } ~
-      path(DoubleNumber) { (id) =>
         post {
           entity(as[Album]) { album =>
-            println("->" + album.id)
-            println("->" + album.description)
-            complete(album.id)
+            println("In POST for Album")
+            //val x = extract { _.request.entity.asString}
+            //println("ID: ${album.id}")
+            //println("->" + album.description)
+            println("->" + album)
+            complete("album")
+            //complete(s"ID: ${album.id}")
           }
         }
       }
@@ -260,6 +263,6 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
 
 
 /*    private def CreateAlbum(arg: Type) = {
-      
+
     }*/
 }
