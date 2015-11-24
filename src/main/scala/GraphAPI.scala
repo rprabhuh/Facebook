@@ -12,6 +12,7 @@ import spray.can.Http.RegisterChunkHandler
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
 import scala.util.parsing.json._
+import scala.collection.mutable.ArrayBuffer
 
 
 class RestInterface extends HttpServiceActor
@@ -23,7 +24,11 @@ class RestInterface extends HttpServiceActor
 trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
 
   implicit val timeout = Timeout(10 seconds)
+  val format = new java.text.SimpleDateFormat()
   import FBJsonProtocol._
+
+  var albumList = ArrayBuffer[Album]()
+
   def routes: Route =
 
     path("") {
@@ -37,17 +42,34 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
     pathPrefix("Album") {
       pathEnd {
         get {
-          complete("GET for Album")
+          println("GET request received")
+          parameter("id") { id =>
+            println("GET request received for id " + id)
+            complete {
+              "GET request received for id " + id
+            }
+          }
         }
         post {
           entity(as[Album]) { album =>
-            println("In POST for Album")
-            //val x = extract { _.request.entity.asString}
-            //println("ID: ${album.id}")
-            //println("->" + album.description)
-            println("->" + album)
-            complete("album")
-            //complete(s"ID: ${album.id}")
+
+            // Create a new album
+            if (album.id == "null") {
+              var newAlbum = new Album((albumList.length + 1).toString,
+                  album.count, album.cover_photo, album.created_time,
+                  album.description, album.from, album.link, album.location,
+                  album.name, album.place, album.privacy, format.format(new java.util.Date()),
+                  album.owner)
+              albumList += newAlbum
+              println("-> User " + album.owner + ": Album created with ID = " + newAlbum.id)
+            }
+            // Update an exising album
+            else {
+              albumList += album
+              println("-> User " + album.owner + ": Album created with ID = " + album.id)
+            }
+
+            complete("Album created!")
           }
         }
       }

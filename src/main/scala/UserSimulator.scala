@@ -16,6 +16,9 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.AdditionalFormats
 
 case class Start()
+case class CreateAlbum()
+case class UpdateAlbum()
+case class GetAlbum(id: String)
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
 
@@ -27,11 +30,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   	def receive = {
 
   		case Start =>
-  			println("Creating an Album..")
+
+
+      case CreateAlbum =>
+        println("Creating an Album..")
 
         import FBJsonProtocol._
 
-  			var A = new Album("ABC123",
+        var A = new Album("null",
             0,
             "33",
             "12:23:12",
@@ -42,9 +48,43 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "name: String",
             "place: String",
             "privacy: String",
-            "updated_time: String")
+            "null",                           // updated_time
+            self.hashCode().toString)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
+
+
+      case GetAlbum(id) =>
+        import FBJsonProtocol._
+        println("Getting an Album..")
+        val response: Future[HttpResponse] = pipeline(Get("http://localhost:8080/Album?id=" + id))
+        println("RESPONSE: " + response)
+
+
+      case UpdateAlbum =>
+        println("Updating an Album..")
+
+        import FBJsonProtocol._
+
+        var A = new Album("null",
+            0,
+            "33",
+            "12:23:12",
+            "description: String",
+            "from: String",
+            "link: String",
+            "location: String",
+            "name: String",
+            "place: String",
+            "privacy: String",
+            "null",                           // updated_time
+            self.hashCode().toString)
+
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
+        println("RESPONSE: " + response)
+
+
+  			
   }
 }

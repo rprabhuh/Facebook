@@ -30,7 +30,15 @@ object Main extends App {
         system.shutdown()
     }
 
-  // Create an actor for simulation
-  var user1 = system.actorOf(Props(new UserSimulator(system)), name = "user1")
-  user1 ! Start
+  // Create actors for simulation
+  var i = 0
+  var fbUser: ActorRef = null
+  for (i <- 0 to 10) {
+    fbUser = system.actorOf(Props(new UserSimulator(system)))
+    for (i <- 0 to 5) {
+      fbUser ! CreateAlbum
+    }
+  }
+  
+  fbUser ! GetAlbum("1")
 }
