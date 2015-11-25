@@ -129,8 +129,7 @@ case class Album (
     name: String,
     place: String,
     privacy: String,
-    updated_time: String,
-    owner: String
+    updated_time: String
   )
 
 case class Photo (
@@ -167,7 +166,7 @@ case class ObjectComments (
 
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
-    implicit val albumFormat = jsonFormat13(Album)
+    implicit val albumFormat = jsonFormat12(Album)
     implicit val pageFormat = jsonFormat21(Page.apply)
     implicit val profileFormat = jsonFormat22(Profile.apply)
     implicit val postFormat = jsonFormat19(PostClass.apply)
