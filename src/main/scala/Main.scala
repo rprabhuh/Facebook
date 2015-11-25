@@ -1,4 +1,4 @@
-import akka.actor.{ActorSystem, Props}
+import akka.actor._
 import akka.pattern.ask
 import akka.io.IO
 import spray.can.Http
@@ -32,13 +32,13 @@ object Main extends App {
 
   // Create actors for simulation
   var i = 0
-  var fbUser: ActorRef = null
-  for (i <- 0 to 10) {
-    fbUser = system.actorOf(Props(new UserSimulator(system)))
-    for (i <- 0 to 5) {
-      fbUser ! CreateAlbum
-    }
-  }
+  var network_size = 10
+  var fbUsers: Array[ActorRef] = new Array[ActorRef](network_size)
+  for (i <- 0 until network_size)
+    fbUsers(i) = system.actorOf(Props(new UserSimulator(system)))
+    
+  for (i <- 0 to 5)
+     fbUsers(i+2) ? CreateAlbum
   
-  fbUser ! GetAlbum("1")
+  fbUsers(0) ! GetAlbum("1")
 }

@@ -39,17 +39,14 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
         }
       }
     } ~
-    pathPrefix("Album") {
-      pathEnd {
+    path("Album") {
         get {
-          println("GET request received")
+          println("GET request received for")
           parameter("id") { id =>
             println("GET request received for id " + id)
-            complete {
-              "GET request received for id " + id
-            }
+            complete {albumList(id.toInt)}
           }
-        }
+        } ~
         post {
           entity(as[Album]) { album =>
 
@@ -72,7 +69,7 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
             complete("Album created!")
           }
         }
-      }
+      //}
     } ~
     pathPrefix("Comment") {
       pathEnd {
