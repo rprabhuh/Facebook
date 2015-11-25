@@ -5,15 +5,12 @@ import akka.actor._
 import spray.can.Http
 import spray.can.server.Stats
 import spray.util._
-//import spray.http._
-//import HttpMethods._
-//import MediaTypes._
 import spray.can.Http.RegisterChunkHandler
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
 import scala.util.parsing.json._
 import scala.collection.mutable.ArrayBuffer
-
+import scala.collection.concurrent.TrieMap
 
 class RestInterface extends HttpServiceActor
   with GraphAPI {
@@ -21,13 +18,25 @@ class RestInterface extends HttpServiceActor
   def receive = runRoute(routes)
 }
 
-trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
+trait GraphAPI extends HttpService with ActorLogging { 
+  actor: Actor =>
+
+  //Maps that will hold all the data.
+  var albumMap = new TrieMap[String, Album]
+  var experience = new TrieMap[String, Experience]
+  var page = new TrieMap[String, Page]
+  var profile = new TrieMap[String, Profile]
+  var postclass = new TrieMap[String, PostClass]
+  var friendlist = new TrieMap[String, FriendList]
+  var photo = new TrieMap[String, Photo]
+  var comment = new TrieMap[String, Comment]
+  var objectcomments = new TrieMap[String, ObjectComments]
+  var numalbums = 0
 
   implicit val timeout = Timeout(10 seconds)
   val format = new java.text.SimpleDateFormat()
   import FBJsonProtocol._
 
-  var albumList = ArrayBuffer[Album]()
 
   def routes: Route =
 
@@ -41,35 +50,40 @@ trait GraphAPI extends HttpService with ActorLogging { actor: Actor =>
     } ~
     path("Album") {
         get {
-          println("GET request received for")
           parameter("id") { id =>
             println("GET request received for id " + id)
-            complete {albumList(id.toInt)}
+            if(albumMap.contains(id))
+              complete {albumMap(id)}
+            else 
+              complete("The requested album was not found")
           }
         } ~
         post {
           entity(as[Album]) { album =>
 
-            // Create a new album
             if (album.id == "null") {
-              var newAlbum = new Album((albumList.length + 1).toString,
+              numalbums +=1
+              var newAlbum = new Album((numalbums).toString,
                   album.count, album.cover_photo, album.created_time,
                   album.description, album.from, album.link, album.location,
-                  album.name, album.place, album.privacy, format.format(new java.util.Date()),
-                  album.owner)
-              albumList += newAlbum
-              println("-> User " + album.owner + ": Album created with ID = " + newAlbum.id)
+                  album.name, album.place, album.privacy, format.format(new java.util.Date())
+                  )
+              albumMap(numalbums.toString) = newAlbum
+              println("-> User " + album.from + ": Album created with ID = " + newAlbum.id)
+              complete("Album created!")
             }
-            // Update an exising album
             else {
-              albumList += album
-              println("-> User " + album.owner + ": Album created with ID = " + album.id)
+              // Update an exising album
+              if(albumMap.contains(album.id)) {
+                albumMap(album.id) = album
+                complete("Album created!")
+              } else {
+                complete("The requested album does not exist!")
+              }
             }
 
-            complete("Album created!")
           }
         }
-      //}
     } ~
     pathPrefix("Comment") {
       pathEnd {

@@ -42,14 +42,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "33",
             "12:23:12",
             "description: String",
-            "from: String",
+            self.hashCode().toString,
             "link: String",
             "location: String",
             "name: String",
             "place: String",
             "privacy: String",
-            "null",                           // updated_time
-            self.hashCode().toString)
+            "null")                           // updated_time
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
@@ -72,14 +71,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "33",
             "12:23:12",
             "description: String",
-            "from: String",
+            self.hashCode().toString,
             "link: String",
             "location: String",
             "name: String",
             "place: String",
             "privacy: String",
-            "null",                           // updated_time
-            self.hashCode().toString)
+            "null")                           // updated_time
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
