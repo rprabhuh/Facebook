@@ -1,0 +1,15 @@
+//ALBUM
+{
+    "id"  :   "KLAJLKSJ###34354",
+    "count"   :               0,
+    "cover_photo" :               "33",
+    "created_time"    :               "12:23:12",
+    "description" :               "description: String",
+    "from"    :               "from: String",
+    "link"    :               "link: String",
+    "location"    :               "location: String",
+    "name"    :               "name: String",
+    "place"   :               "place: String",
+    "privacy" :               "privacy: String",
+    "updated_time"    :               "updated_time: String"
+}
