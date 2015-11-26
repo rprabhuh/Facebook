@@ -21,16 +21,16 @@ class RestInterface extends HttpServiceActor
 trait GraphAPI extends HttpService with ActorLogging { 
   actor: Actor =>
 
-  //Maps that will hold all the data.
+  // Maps that will hold all the data.
   var albumMap = new TrieMap[String, Album]
-  var experience = new TrieMap[String, Experience]
-  var page = new TrieMap[String, Page]
-  var profile = new TrieMap[String, Profile]
-  var postclass = new TrieMap[String, PostClass]
-  var friendlist = new TrieMap[String, FriendList]
-  var photo = new TrieMap[String, Photo]
-  var comment = new TrieMap[String, Comment]
-  var objectcomments = new TrieMap[String, ObjectComments]
+  var experienceMap = new TrieMap[String, Experience]
+  var pageMap = new TrieMap[String, Page]
+  var profileMap = new TrieMap[String, Profile]
+  var postclassMap = new TrieMap[String, PostClass]
+  var friendlistMap = new TrieMap[String, FriendList]
+  var photoMap = new TrieMap[String, Photo]
+  var commentMap = new TrieMap[String, Comment]
+  var objectcommentsMap = new TrieMap[String, ObjectComments]
   var numalbums = 0
 
   implicit val timeout = Timeout(10 seconds)
@@ -76,7 +76,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               // Update an exising album
               if(albumMap.contains(album.id)) {
                 albumMap(album.id) = album
-                complete("Album created!")
+                complete("Album updated!")
               } else {
                 complete("The requested album does not exist!")
               }
@@ -121,71 +121,6 @@ trait GraphAPI extends HttpService with ActorLogging {
         post {
           requestContext => println(id)
           requestContext.complete("Let us POST for FriendList")
-        }
-      }
-    } ~
-    pathPrefix("Group") {
-      pathEnd {
-        get {
-          complete("GET for Group")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Group")
-        }
-      }
-    } ~
-    pathPrefix("GroupDoc") {
-      pathEnd {
-        get {
-          complete("GET for GroupDoc")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for GroupDoc")
-        }
-      }
-    } ~
-    pathPrefix("Link") {
-      pathEnd {
-        get {
-          complete("GET for Link")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Link")
-        }
-      }
-    } ~
-    pathPrefix("Message") {
-      pathEnd {
-        get {
-          complete("GET for Message")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Message")
-        }
-      }
-    } ~
-    pathPrefix("Notification") {
-      pathEnd {
-        get {
-          complete("GET for Notification")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Notification")
         }
       }
     } ~
@@ -293,9 +228,4 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     }
-
-
-/*    private def CreateAlbum(arg: Type) = {
-
-    }*/
 }
