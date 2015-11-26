@@ -1,0 +1,145 @@
+Page - A facebook page
+    id numeric string
+    about string
+    access_token string
+    can_post bool
+    category_list list<PageCategory>
+    cover CoverPhoto
+    description string
+    emails list<string>
+    is_community_page bool
+    is_permanently_closed bool
+    is_published bool
+    like_count unsigned int32
+    link string
+    location Location
+	messages Message[]
+    message_count unsigned int32
+    name string
+    parent_page Page
+	posts Post[]
+    phone string
+    last_used_time datetime
+    likes unsigned int32
+    members User[]
+}
+
+
+Profile - A user profile
+{
+    id numeric string
+    about string
+    bio string
+    birthday string
+    education list<EducationExperience>
+    email string
+    favorite_athletes list<Experience>
+    favorite_teams list<Experience>
+    first_name string
+    gender string
+    hometown Page
+    inspirational_people list<Experience>
+    interested_in list<string>
+    is_verified bool
+    languages list<Experience>
+    last_name string
+    link string
+    location Page
+    middle_name string
+    political string
+    relationship_status string
+    religion string
+    security_settings SecuritySettings
+    significant_other User
+    sports list<Experience>
+    quotes string
+    updated_time datetime
+    website string
+    work list<WorkExperience>
+    public_key string
+    cover Photo
+}
+
+
+Post - Facebook posts
+{
+    id  string
+    caption string
+    created_time  datetime
+    description string
+    from  Profile
+    icon  string
+    is_hidden boolean
+    link  string
+    location String
+    message string
+    name  string
+    object_id string
+    picture Photo[]
+    privacy object
+    shares  object
+    status_type enum{mobile_status_update, created_note, added_photos, added_video, shared_story, created_group, created_event, wall_post, app_created_story, published_story, tagged_in_photo, approved_friend}
+    to  Profile[]
+    type  enum{link, status, photo, video, offer}
+    updated_time  datetime
+}
+
+
+FriendList - List of friends of a user
+    id numeric string
+    name string
+    owner numeric string
+	members Profile[]
+
+Experience - A sub type used internally
+id numeric string
+description string
+name string
+from User
+with list<User>
+
+
+Album - Collection of Photos
+    id    string
+    count   int
+    cover_photo   string
+    created_time    datetime
+    description   string
+    from    User
+    link    string
+    location    string
+    name    string
+    place   Page
+    privacy   string
+    updated_time    datetime
+
+
+Photo - A single photo
+    id  string
+    album Album
+    created_time datetime
+    from Profile
+    image Byte[]
+    link string
+    name string
+    updated_time datetime
+    place string
+    user_comments List[String]
+    user_likes List[String]
+
+
+Comment - A single comment on photo/album/post
+    id  string
+    created_time  DateTime
+    from  String
+    message string
+    parent  String
+    user_comments List[String]
+    user_likes List[String]
+
+
+ObjectComments - Details of comments on each post/album/user
+    id String
+    object_type Enumeration
+    object_id String
+    comments List[String]
