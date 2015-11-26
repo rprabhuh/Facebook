@@ -1,4 +1,4 @@
-//ALBUM
+// ALBUM
 {
     "id"  :   "KLAJLKSJ###34354",
     "count"   :               0,
@@ -12,4 +12,54 @@
     "place"   :               "place: String",
     "privacy" :               "privacy: String",
     "updated_time"    :               "updated_time: String"
+}
+
+// PAGE
+{
+    "id": "null",
+    "about": "about == String",
+    "can_post": true,
+    "cover": "cover == String",
+    "description": "description == String",
+    "emails": ["emails == List[String]"],
+    "is_community_page": false,
+    "is_permanently_closed": false,
+    "is_published": true,
+    "like_count": 10,
+    "link": "link == String",
+    "location": "location == String",
+    "from": "1083346431",
+    "name": "name == String",
+    "parent_page": "parent_page == String",
+    "posts": ["posts == List[String]"],
+    "phone": "phone == String",
+    "last_used_time": "last_used_time == String",
+    "likes": ["1083346431"],
+    "members": ["1083346431", "984762113"]
+}
+
+// PROFILE
+{
+    "id": "String",
+    "bio": "String",
+    "birthday": "String",
+    "education": "List[String]",
+    "email": "String",
+    "first_name": "String",
+    "gender": "String",
+    "hometown": "String",
+    "interested_in": "List[String]",
+    "languages": "List[String]",
+    "last_name": "String",
+    "link": "String",
+    "location": "String",
+    "middle_name": "String",
+    "political": "String",
+    "relationship_status": "String",
+    "religion": "String",
+    "significant_other": "String",
+    "updated_time": "String",
+    "website": "String",
+    "work": "List[String]",
+    "cover": "String"
 }

@@ -39,17 +39,16 @@ case class Page (
     is_community_page: Boolean,
     is_permanently_closed: Boolean,
     is_published: Boolean,
-    like_count: Int ,
+    like_count: Int,
     link: String,
     location: String,
-    messages: List[String],
-    message_count: Int,
+    from: String,
     name: String,
     parent_page: String,
     posts: List[String],
     phone: String,
     last_used_time: String,
-    likes: Int ,
+    likes: List[String],
     members: List[String]
 )
 
@@ -167,7 +166,7 @@ case class ObjectComments (
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
     implicit val albumFormat = jsonFormat12(Album)
-    implicit val pageFormat = jsonFormat21(Page.apply)
+    implicit val pageFormat = jsonFormat20(Page.apply)
     implicit val profileFormat = jsonFormat22(Profile.apply)
     implicit val postFormat = jsonFormat19(PostClass.apply)
     implicit val friendListFormat = jsonFormat4(FriendList.apply)

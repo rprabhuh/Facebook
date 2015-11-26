@@ -31,7 +31,9 @@ trait GraphAPI extends HttpService with ActorLogging {
   var photoMap = new TrieMap[String, Photo]
   var commentMap = new TrieMap[String, Comment]
   var objectcommentsMap = new TrieMap[String, ObjectComments]
+  
   var numalbums = 0
+  var numPages = 0
 
   implicit val timeout = Timeout(10 seconds)
   val format = new java.text.SimpleDateFormat()
@@ -51,7 +53,7 @@ trait GraphAPI extends HttpService with ActorLogging {
     path("Album") {
         get {
           parameter("id") { id =>
-            println("GET request received for id " + id)
+            println("ALBUM: GET request received for id " + id)
             if(albumMap.contains(id))
               complete {albumMap(id)}
             else 
@@ -81,7 +83,17 @@ trait GraphAPI extends HttpService with ActorLogging {
                 complete("The requested album does not exist!")
               }
             }
-
+          }
+        } ~
+        delete {
+          parameter("del_id") { del_id =>
+            println("ALBUM: DELETE request received for del_id = " + del_id)
+            if(albumMap.contains(del_id)) {
+              albumMap.remove(del_id)
+              complete("Album with id = " + del_id + " was deleted!")
+            }
+            else 
+              complete("Album with id = " + del_id + " was not found")
           }
         }
     } ~
@@ -163,18 +175,54 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    pathPrefix("Page") {
-      pathEnd {
+    path("Page") {
         get {
-          complete("GET for Page")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
+          parameter("id") { id =>
+            println("PAGE: GET request received for id " + id)
+            if(pageMap.contains(id))
+              complete {pageMap(id)}
+            else 
+              complete("The requested page was not found")
+          }
+        } ~
         post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Page")
+          entity(as[Page]) { page =>
+
+            if (page.id == "null") {
+              numPages += 1
+              var newPage = new Page((numPages).toString, page.about, page.can_post,
+                  page.cover, page.description, page.emails, page.is_community_page,
+                  page.is_permanently_closed, page.is_published, page.like_count, page.link,
+                  page.location, page.from, page.name,
+                  page.parent_page, page.posts, page.phone, format.format(new java.util.Date()),
+                  page.likes, page.members)
+
+              pageMap(numPages.toString) = newPage
+              println("-> User " + page.from + ": Page created with ID = " + newPage.id)
+              complete("Page created!")
+            }
+            else {
+              // Update an exising album
+              if(pageMap.contains(page.id)) {
+                pageMap(page.id) = page
+                complete("Page updated!")
+              } else {
+                complete("The requested page does not exist!")
+              }
+            }
+          }
+        } ~
+        delete {
+          parameter("del_id") { del_id =>
+            println("PAGE: DELETE request received for id = " + del_id)
+            if(pageMap.contains(del_id)) {
+              pageMap.remove(del_id)
+              complete("Page with id = " + del_id + " was deleted!")
+            }
+            else 
+              complete("Page with id = " + del_id + " was not found")
+          }
         }
-      }
     } ~
     pathPrefix("Photo") {
       pathEnd {
@@ -215,17 +263,50 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    pathPrefix("User") {
-      pathEnd {
-        get {
-          complete("GET for User")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
+    path("Profile") {
+       get {
+          parameter("id") { id =>
+            println("PROFILE: GET request received for id " + id)
+            if(profileMap.contains(id))
+              complete {profileMap(id)}
+            else 
+              complete("The requested profile was not found")
+          }
+        } ~
         post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for User")
+          entity(as[Profile]) { profile =>
+
+            // Existing user
+            if(profileMap.contains(profile.id)) {
+                profileMap(profile.id) = profile
+                complete("Profile with id " + profile.id + " updated!")
+            }
+
+            // Creating a user profile
+            else {
+              var newProfile = new Profile(profile.id, profile.bio, profile.birthday,
+                profile.education, profile.email, profile.first_name, profile.gender,
+                profile.hometown, profile.interested_in, profile.languages, profile.last_name,
+                profile.link, profile.location, profile.middle_name, profile.political,
+                profile.relationship_status, profile.religion, profile.significant_other,
+                profile.updated_time, profile.website, profile.work, profile.cover)
+
+              profileMap(profile.id) = newProfile
+              println("-> PROFILE created with id = " + newProfile.id)
+              complete("Profile created!")
+            }
+          }
+        } ~
+        delete {
+          parameter("del_id") { del_id =>
+            println("USER: DELETE request received for id = " + del_id)
+            if(profileMap.contains(del_id)) {
+              profileMap.remove(del_id)
+              complete("Profile with id = " + del_id + " was deleted!")
+            }
+            else 
+              complete("Profile with id = " + del_id + " was not found")
+          }
         }
-      }
     }
 }
