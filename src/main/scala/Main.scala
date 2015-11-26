@@ -37,8 +37,11 @@ object Main extends App {
   for (i <- 0 until network_size)
     fbUsers(i) = system.actorOf(Props(new UserSimulator(system)))
     
-  for (i <- 0 to 5)
+  for (i <- 0 to 5) {
      fbUsers(i+2) ? CreateAlbum
+  }
   
   fbUsers(0) ! GetAlbum("1")
+  fbUsers(0) ? UploadPhoto
+  fbUsers(0) ? UploadPhoto
 }

@@ -34,6 +34,7 @@ trait GraphAPI extends HttpService with ActorLogging {
   
   var numalbums = 0
   var numPages = 0
+  var numphotos = 0
 
   implicit val timeout = Timeout(10 seconds)
   val format = new java.text.SimpleDateFormat()
@@ -224,18 +225,35 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         }
     } ~
-    pathPrefix("Photo") {
-      pathEnd {
+    path("Photo") {
         get {
-          complete("GET for Photo")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
+          parameter("id") { id =>
+            println("GET request received for id " + id)
+            if(photoMap.contains(id))
+              complete {photoMap(id)}
+            else 
+              complete("The requested photo was not found")
+          }
+        }~
         post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Photo")
+          println("Got a post for photos")
+          entity(as[Photo]) { photo =>
+ 
+            if(photo.id == "null") {
+              numphotos += 1
+              var newPhoto = new Photo(numphotos.toString,
+                photo.album, format.format(new java.util.Date()), 
+                photo.from, photo.image, photo.link, photo.name, 
+                format.format(new java.util.Date()), photo.place, 
+                photo.user_comments, photo.user_likes
+                )
+              photoMap(numphotos.toString) = newPhoto
+              complete("Photo with id "+ newPhoto.id + " Uploaded!")
+            } else {
+              complete("The requested photo was not found")
+            }
+          }
         }
-      }
     } ~
     pathPrefix("Status") {
       pathEnd {
