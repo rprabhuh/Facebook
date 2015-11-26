@@ -9,7 +9,6 @@ import spray.can.Http.RegisterChunkHandler
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
 import scala.util.parsing.json._
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.concurrent.TrieMap
 
 class RestInterface extends HttpServiceActor
@@ -30,16 +29,17 @@ trait GraphAPI extends HttpService with ActorLogging {
   var friendlistMap = new TrieMap[String, FriendList]
   var photoMap = new TrieMap[String, Photo]
   var commentMap = new TrieMap[String, Comment]
-  var objectcommentsMap = new TrieMap[String, ObjectComments]
+  var objectCommentsMap = new TrieMap[String, ObjectComments]
   
   var numalbums = 0
   var numPages = 0
   var numphotos = 0
+  var numComments = 0
 
   implicit val timeout = Timeout(10 seconds)
   val format = new java.text.SimpleDateFormat()
   import FBJsonProtocol._
-
+  import scala.collection.mutable.ArrayBuffer
 
   def routes: Route =
 
@@ -98,16 +98,66 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         }
     } ~
-    pathPrefix("Comment") {
-      pathEnd {
-        get {
-          complete("GET for Comment")
+    path("Comment") {
+      post {
+        entity(as[Comment]) { comment =>
+          
+          // Create a new comment
+          if (comment.id == "null") {
+            numComments += 1
+            var newComment = new Comment((numComments).toString, comment.object_id,
+                comment.created_time, comment.from, comment.message, comment.parent,
+                comment.user_comments, comment.user_likes)
+
+            if (objectCommentsMap.contains(comment.object_id)) {
+              commentMap(numComments.toString) = newComment
+              
+              // Update the objectCommentMap with this comment
+              var currObj = objectCommentsMap(comment.object_id)
+              currObj.comments = currObj.comments :+ newComment.id
+              objectCommentsMap(comment.object_id) = currObj
+              
+              println("-> Comment created for Object " + newComment.object_id + " with ID = " + newComment.id)
+              complete("Comment created!")
+            }
+            else
+              complete("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
+          }
+          
+          // Update an existing comment
+          else {
+            if(commentMap.contains(comment.id)) {
+              commentMap(comment.id) = comment
+              complete("Comment with id = " + comment.id + " updated!")
+            } else {
+              complete("Comment with id = " + comment.id + " DOES NOT EXIST!")
+            }
+          }
         }
       } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Comment")
+      delete {
+        parameter("del_id") { del_id =>
+          println("COMMENT: DELETE request received for del_id = " + del_id)
+      
+          if (objectCommentsMap.contains(del_id)) {              
+      
+            if(commentMap.contains(del_id)) {
+
+              var comment = commentMap(del_id)
+              
+              // Update the objectCommentMap with this comment
+              var currObj = objectCommentsMap(comment.object_id)
+              currObj.comments = currObj.comments.filter(! _.contains(del_id))
+              objectCommentsMap(comment.object_id) = currObj
+              
+              commentMap.remove(del_id)
+              complete("Comment with id = " + del_id + " was deleted!")
+            }
+            else
+              complete("Comment with id = " + del_id + " was not found")
+          }
+          else
+            complete("COMMENT: Parent Object with id = " + del_id + " DOES NOT EXIST!")
         }
       }
     } ~

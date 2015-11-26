@@ -96,7 +96,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         var bytearray = bytearraystream.toByteArray()
         bytearraystream.close()
 
-        val list = List("a","b","c")
+        val list = Array("a","b","c")
         
         import FBJsonProtocol._
         var A = new Photo("null",

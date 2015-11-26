@@ -30,7 +30,7 @@ Input  : id
 Output : {Success_msg}
 --------------------------------------------------------------------------------
 
-COMMENT --> PRIVATE API
+COMMENT
 GET
 Input  : id
 Output : {

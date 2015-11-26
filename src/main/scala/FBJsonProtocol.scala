@@ -26,7 +26,7 @@ case class Experience (
     description: String,
     name: String,
     from: String,
-    with_user: List[String]
+    with_user: Array[String]
 )
 
 case class Page (
@@ -35,7 +35,7 @@ case class Page (
     can_post: Boolean,
     cover: String,
     description: String,
-    emails: List[String],
+    emails: Array[String],
     is_community_page: Boolean,
     is_permanently_closed: Boolean,
     is_published: Boolean,
@@ -45,11 +45,11 @@ case class Page (
     from: String,
     name: String,
     parent_page: String,
-    posts: List[String],
+    posts: Array[String],
     phone: String,
     last_used_time: String,
-    likes: List[String],
-    members: List[String]
+    likes: Array[String],
+    members: Array[String]
 )
 
 case class Profile (
@@ -57,17 +57,17 @@ case class Profile (
     //about: String,
     bio: String,
     birthday: String,
-    education: List[String],
+    education: Array[String],
     email: String,
-    //favorite_athletes: List[String],
-    //favorite_teams: List[String],
+    //favorite_athletes: Array[String],
+    //favorite_teams: Array[String],
     first_name: String,
     gender: String,
     hometown: String,
-    //inspirational_people: List[String],
-    interested_in: List[String],
+    //inspirational_people: Array[String],
+    interested_in: Array[String],
     //is_verified: Boolean,
-    languages: List[String],
+    languages: Array[String],
     last_name: String,
     link: String,
     location: String,
@@ -76,11 +76,11 @@ case class Profile (
     relationship_status: String,
     religion: String,
     significant_other: String,
-    //sports: List[String],
+    //sports: Array[String],
     //quotes: String,
     updated_time: String,
     website: String,
-    work: List[String],
+    work: Array[String],
     //public_key: String,
     cover: String
   )
@@ -98,11 +98,11 @@ case class PostClass (
     message: String,
     name: String,
     object_id: String,
-    picture: List[String],
+    picture: Array[String],
     privacy: String,
     shares: String,
     status_type: String,
-    to: List[String],
+    to: Array[String],
     post_type: String,
     updated_time: String
   )
@@ -112,7 +112,7 @@ case class FriendList (
     id: String,
     name: String,
     owner: String,
-    members: List[String]
+    members: Array[String]
   )
 
 
@@ -141,25 +141,26 @@ case class Photo (
     name: String,
     updated_time: String,
     place: String,
-    user_comments: List[String],
-    user_likes: List[String]
+    user_comments: Array[String],
+    user_likes: Array[String]
 )
 
 case class Comment (
     id: String,
+    object_id: String,
     created_time: String,
     from: String,
     message: String,
     parent: String,
-    user_comments: List[String],
-    user_likes: List[String]
+    user_comments: Array[String],
+    user_likes: Array[String]
 )
 
-case class ObjectComments (
-    id: String,
-    object_type: String,
-    object_id: String,
-    comments: List[String]
+class ObjectComments (
+    var id: String,
+    var object_type: String,
+    var object_id: String,
+    var comments: Array[String]
 )
 
 
@@ -172,7 +173,7 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val friendListFormat = jsonFormat4(FriendList.apply)
     implicit val experienceFormat = jsonFormat5(Experience.apply)
     implicit val photoFormat = jsonFormat11(Photo.apply)
-    implicit val commentFormat = jsonFormat7(Comment.apply)
-    implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
+    implicit val commentFormat = jsonFormat8(Comment.apply)
+    //implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
 
 }
