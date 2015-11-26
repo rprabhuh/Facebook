@@ -14,10 +14,15 @@ import scala.concurrent.Future
 import spray.httpx.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import spray.json.AdditionalFormats
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+import java.io.ByteArrayOutputStream
+import java.io.File
 
 case class Start()
 case class CreateAlbum()
 case class UpdateAlbum()
+case class UploadPhoto()
 case class GetAlbum(id: String)
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
@@ -83,6 +88,31 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         println("RESPONSE: " + response)
 
 
-  			
+      case UploadPhoto	=>
+        var image = ImageIO.read(new File("media/batman.png"))
+        var bytearraystream = new ByteArrayOutputStream()
+        ImageIO.write(image, "png", bytearraystream)
+        bytearraystream.flush()
+        var bytearray = bytearraystream.toByteArray()
+        bytearraystream.close()
+
+        val list = List("a","b","c")
+        
+        import FBJsonProtocol._
+        var A = new Photo("null",
+          "1",
+          "created_time",
+          "from",
+          bytearray,
+          "link",
+          "name",
+          "updated_time",
+          "place", 
+          list,
+          list)
+
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
+        println("RESPONSE: " + response)
+
   }
 }
