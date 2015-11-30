@@ -40,16 +40,16 @@
 
 // PROFILE
 {
-    "id": "String",
+    "id": "1",
     "bio": "String",
     "birthday": "String",
-    "education": "List[String]",
+    "education": ["List"],
     "email": "String",
     "first_name": "String",
     "gender": "String",
     "hometown": "String",
-    "interested_in": "List[String]",
-    "languages": "List[String]",
+    "interested_in": ["List"],
+    "languages": ["List"],
     "last_name": "String",
     "link": "String",
     "location": "String",
@@ -60,6 +60,27 @@
     "significant_other": "String",
     "updated_time": "String",
     "website": "String",
-    "work": "List[String]",
+    "work": ["List"],
     "cover": "String"
+}
+
+//FriendRequest
+{
+"fromid" : "1",
+"toid"	: "2"
+}
+
+// Photo
+{
+    "id": "String",
+    "album": "String",
+    "created_time": "String",
+    "from": "String",
+    "image": ["ArrayByte"],
+    "link": "String",
+    "name": "String",
+    "updated_time": "String",
+    "place": "String",
+    "user_comments": ["String"],
+    "user_likes": ["String"]   
 }
