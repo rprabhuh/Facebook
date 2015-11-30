@@ -89,6 +89,14 @@ trait GraphAPI extends HttpService with ActorLogging {
           parameter("del_id") { del_id =>
             println("ALBUM: DELETE request received for del_id = " + del_id)
             if(albumMap.contains(del_id)) {
+              var tempObj = albumMap(del_id)
+              var i = 0
+              var size = tempObj.photos.size
+              for (i <- 0 until size)
+              {
+                if(photoMap.contains(tempObj.photos(i)))
+                  photoMap.remove(tempObj.photos(i))
+              }
               albumMap.remove(del_id)
               complete("Album with id = " + del_id + " was deleted!")
             }
