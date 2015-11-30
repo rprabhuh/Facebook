@@ -35,13 +35,14 @@ object Main extends App {
   var network_size = 10
   var fbUsers: Array[ActorRef] = new Array[ActorRef](network_size)
   for (i <- 0 until network_size)
-    fbUsers(i) = system.actorOf(Props(new UserSimulator(system)))
+    fbUsers(i) = system.actorOf(Props(new UserSimulator(system)), name = i.toString)
     
   for (i <- 0 to 5) {
      fbUsers(i+2) ? CreateAlbum
   }
   
   fbUsers(0) ! GetAlbum("1")
-  fbUsers(0) ? UploadPhoto
-  fbUsers(0) ? UploadPhoto
+  fbUsers(0) ? UploadPhoto("1.png", "1")
+  fbUsers(0) ? UploadPhoto("4.png", "4")
+  fbUsers(0) ? AddFriend("5")
 }

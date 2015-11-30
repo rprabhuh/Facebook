@@ -69,8 +69,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               var newAlbum = new Album((numalbums).toString,
                   album.count, album.cover_photo, album.created_time,
                   album.description, album.from, album.link, album.location,
-                  album.name, album.place, album.privacy, format.format(new java.util.Date())
-                  )
+                  album.name, album.place, album.privacy, format.format(new java.util.Date()),Array(album.cover_photo))
               albumMap(numalbums.toString) = newAlbum
               println("-> User " + album.from + ": Album created with ID = " + newAlbum.id)
               complete("Album created!")
@@ -290,21 +289,42 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Photo]) { photo =>
  
             if(photo.id == "null") {
+              if(albumMap.contains(photo.album)) {
               numphotos += 1
               var newPhoto = new Photo(numphotos.toString,
-                photo.album, format.format(new java.util.Date()), 
-                photo.from, photo.image, photo.link, photo.name, 
-                format.format(new java.util.Date()), photo.place, 
+                photo.album, format.format(new java.util.Date()),
+                photo.from, photo.image, photo.link, photo.name,
+                format.format(new java.util.Date()), photo.place,
                 photo.user_comments, photo.user_likes
                 )
               photoMap(numphotos.toString) = newPhoto
+              var tempObj = albumMap(photo.album)
+              tempObj.photos = tempObj.photos :+ newPhoto.id
+              albumMap(photo.album) = tempObj
+              println("Photo with id "+ newPhoto.id + " Uploaded!")
               complete("Photo with id "+ newPhoto.id + " Uploaded!")
+              } else {
+                println("Couldn't upload photo to Album " + photo.album +". No such album")
+                complete("Couldn't upload photo to Album " + photo.album +". No such album")
+              }
             } else {
               complete("The requested photo was not found")
             }
           }
+        }~
+        delete {
+          parameter("del_id") { del_id =>
+            println("Photo: DELETE request received for id = " + del_id)
+            if(photoMap.contains(del_id)) {
+              photoMap.remove(del_id)
+              complete("Photo with id = " + del_id + " was deleted!")
+            }
+            else {
+              complete("Profile with id = " + del_id + " was not found")
+            }
+          }
         }
-    } ~
+    }~
     pathPrefix("Status") {
       pathEnd {
         get {
@@ -376,5 +396,48 @@ trait GraphAPI extends HttpService with ActorLogging {
               complete("Profile with id = " + del_id + " was not found")
           }
         }
+    }~
+    path("AddFriend") {
+      post{
+        entity(as[FriendReqest]) { fr =>
+        //Add from
+        if(profileMap.contains(fr.toid) && profileMap.contains(fr.fromid)) {
+        if(friendlistMap.contains(fr.fromid)) {
+          //retrieve the Friendlistobject and add this new user to it 
+          var currObj = friendlistMap(fr.fromid)
+          if(!currObj.members.contains(fr.toid)) {
+            currObj.members = currObj.members :+ fr.toid
+            friendlistMap(fr.fromid)= currObj
+          }  
+        } else {
+          //Create a new entry
+          var tempObj = new FriendList(fr.fromid, Array[String](fr.toid))
+          friendlistMap(fr.fromid) = tempObj
+        }
+
+        //Add to
+        if(friendlistMap.contains(fr.toid)) {
+          //retrieve the Friendlistobject and add this new user to it 
+          var currObj = friendlistMap(fr.toid)
+          currObj.members = currObj.members :+ fr.fromid
+          friendlistMap(fr.toid)= currObj
+        } else {
+          //Create a new entry
+          var tempObj = new FriendList(fr.toid, Array[String](fr.fromid))
+          friendlistMap(fr.toid) = tempObj
+        }
+        println(fr.fromid + " is friends with " + fr.toid)
+        complete {"Done"}
+/*          val tempUser = context.actorFor("akka://facebook/user/" + toid)
+            tempUser ! AddFriend(fromid)
+            "Done !!"*/
+        } else {
+          println("The requested user was not found")
+          complete("The requested user was not found")
+        }
+        }   
+      
+      } 
     }
 }
+

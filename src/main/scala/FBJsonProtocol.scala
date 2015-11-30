@@ -26,154 +26,158 @@ case class Experience (
     description: String,
     name: String,
     from: String,
-    with_user: Array[String]
+    var with_user: Array[String]
 )
 
 case class Page (
     id: String,
-    about: String,
-    can_post: Boolean,
-    cover: String,
-    description: String,
-    emails: Array[String],
-    is_community_page: Boolean,
-    is_permanently_closed: Boolean,
-    is_published: Boolean,
-    like_count: Int,
-    link: String,
-    location: String,
-    from: String,
-    name: String,
-    parent_page: String,
-    posts: Array[String],
-    phone: String,
-    last_used_time: String,
-    likes: Array[String],
-    members: Array[String]
+    var about: String,
+    var can_post: Boolean,
+    var cover: String,
+    var description: String,
+    var emails: Array[String],
+    var is_community_page: Boolean,
+    var is_permanently_closed: Boolean,
+    var is_published: Boolean,
+    var like_count: Int,
+    var link: String,
+    var location: String,
+    var from: String,
+    var name: String,
+    var parent_page: String,
+    var posts: Array[String],
+    var phone: String,
+    var last_used_time: String,
+    var likes: Array[String],
+    var members: Array[String]
 )
 
 case class Profile (
     id: String,
     //about: String,
-    bio: String,
-    birthday: String,
-    education: Array[String],
-    email: String,
+    var bio: String,
+    var birthday: String,
+    var education: Array[String],
+    var email: String,
     //favorite_athletes: Array[String],
     //favorite_teams: Array[String],
-    first_name: String,
-    gender: String,
-    hometown: String,
+    var first_name: String,
+    var gender: String,
+    var hometown: String,
     //inspirational_people: Array[String],
-    interested_in: Array[String],
+    var interested_in: Array[String],
     //is_verified: Boolean,
-    languages: Array[String],
-    last_name: String,
-    link: String,
-    location: String,
-    middle_name: String,
-    political: String,
-    relationship_status: String,
-    religion: String,
-    significant_other: String,
+    var languages: Array[String],
+    var last_name: String,
+    var link: String,
+    var location: String,
+    var middle_name: String,
+    var political: String,
+    var relationship_status: String,
+    var religion: String,
+    var significant_other: String,
     //sports: Array[String],
     //quotes: String,
-    updated_time: String,
-    website: String,
-    work: Array[String],
-    //public_key: String,
-    cover: String
+    var updated_time: String,
+    var website: String,
+    var work: Array[String],
+    //var public_key: String,
+    var cover: String
   )
 
 case class PostClass (
     id: String,
-    caption: String,
-    created_time: String,
-    description: String,
-    from: String,
-    icon: String,
-    is_hidden: Boolean,
-    link: String,
-    location: String,
-    message: String,
-    name: String,
-    object_id: String,
-    picture: Array[String],
-    privacy: String,
-    shares: String,
-    status_type: String,
-    to: Array[String],
-    post_type: String,
-    updated_time: String
+    var caption: String,
+    var created_time: String,
+    var description: String,
+    var from: String,
+    var icon: String,
+    var is_hidden: Boolean,
+    var link: String,
+    var location: String,
+    var message: String,
+    var name: String,
+    var object_id: String,
+    var picture: Array[String],
+    var privacy: String,
+    var shares: String,
+    var status_type: String,
+    var to: Array[String],
+    var post_type: String,
+    var updated_time: String
   )
 
 
 case class FriendList (
     id: String,
-    name: String,
-    owner: String,
-    members: Array[String]
+    var members: Array[String]
   )
 
 
 case class Album (
     id: String,
-    count: Int,
-    cover_photo: String,
-    created_time: String,
-    description: String,
-    from: String,
-    link: String,
-    location: String,
-    name: String,
-    place: String,
-    privacy: String,
-    updated_time: String
+    var count: Int,
+    var cover_photo: String,
+    var created_time: String,
+    var description: String,
+    var from: String,
+    var link: String,
+    var location: String,
+    var name: String,
+    var place: String,
+    var privacy: String,
+    var updated_time: String,
+    var photos: Array[String]
   )
 
 case class Photo (
     id: String,
-    album: String,
-    created_time: String,
-    from: String,
-    image: Array[Byte],
-    link: String,
-    name: String,
-    updated_time: String,
-    place: String,
-    user_comments: Array[String],
-    user_likes: Array[String]
+    var album: String,
+    var created_time: String,
+    var from: String,
+    var image: Array[Byte],
+    var link: String,
+    var name: String,
+    var updated_time: String,
+    var place: String,
+    var user_comments: Array[String],
+    var user_likes: Array[String]
 )
 
 case class Comment (
     id: String,
-    object_id: String,
-    created_time: String,
-    from: String,
-    message: String,
-    parent: String,
-    user_comments: Array[String],
-    user_likes: Array[String]
+    var object_id: String,
+    var created_time: String,
+    var from: String,
+    var message: String,
+    var parent: String,
+    var user_comments: Array[String],
+    var user_likes: Array[String]
 )
 
 class ObjectComments (
-    var id: String,
+    id: String,
     var object_type: String,
     var object_id: String,
     var comments: Array[String]
 )
 
+case class FriendReqest( 
+  fromid: String,
+  toid: String
+)
 
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
-    implicit val albumFormat = jsonFormat12(Album)
+    implicit val albumFormat = jsonFormat13(Album)
     implicit val pageFormat = jsonFormat20(Page.apply)
     implicit val profileFormat = jsonFormat22(Profile.apply)
     implicit val postFormat = jsonFormat19(PostClass.apply)
-    implicit val friendListFormat = jsonFormat4(FriendList.apply)
+    implicit val friendListFormat = jsonFormat2(FriendList.apply)
     implicit val experienceFormat = jsonFormat5(Experience.apply)
     implicit val photoFormat = jsonFormat11(Photo.apply)
     implicit val commentFormat = jsonFormat8(Comment.apply)
+    implicit val FriendReqestFormat = jsonFormat2(FriendReqest.apply)
     //implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
 
 }

@@ -22,9 +22,9 @@ import java.io.File
 case class Start()
 case class CreateAlbum()
 case class UpdateAlbum()
-case class UploadPhoto()
+case class UploadPhoto(id: String, album_id: String)
 case class GetAlbum(id: String)
-
+case class AddFriend(id:String)
 class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   val system = systemArg
@@ -32,12 +32,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
   //val pipeline2: HttpRequest => Future[HttpResponse] = sendReceive
 
-  	def receive = {
-
-  		case Start =>
-
-
-      case CreateAlbum =>
+  def receive = { 
+    case Start =>
+    case CreateAlbum =>
         println("Creating an Album..")
 
         import FBJsonProtocol._
@@ -47,13 +44,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "33",
             "12:23:12",
             "description: String",
-            self.hashCode().toString,
+            self.path.name,
             "link: String",
             "location: String",
             "name: String",
             "place: String",
             "privacy: String",
-            "null")                           // updated_time
+            "null",                           // updated_time
+            Array("cover_photo"))
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
@@ -76,20 +74,21 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "33",
             "12:23:12",
             "description: String",
-            self.hashCode().toString,
+            self.path.name,
             "link: String",
             "location: String",
             "name: String",
             "place: String",
             "privacy: String",
-            "null")                           // updated_time
+            "null",                           // updated_time
+            Array("cover_photo"))
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
 
 
-      case UploadPhoto	=>
-        var image = ImageIO.read(new File("media/batman.png"))
+      case UploadPhoto(id, album_id) =>
+        var image = ImageIO.read(new File("media/" + id))
         var bytearraystream = new ByteArrayOutputStream()
         ImageIO.write(image, "png", bytearraystream)
         bytearraystream.flush()
@@ -100,7 +99,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         
         import FBJsonProtocol._
         var A = new Photo("null",
-          "1",
+          album_id,
           "created_time",
           "from",
           bytearray,
@@ -113,6 +112,11 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         println("RESPONSE: " + response)
+
+      case AddFriend(id) =>
+        import FBJsonProtocol._
+        var A = new FriendReqest(self.path.name, id)
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
 
   }
 }
