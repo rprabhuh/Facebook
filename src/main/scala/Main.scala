@@ -43,6 +43,7 @@ object Main extends App {
   
   fbUsers(0) ! GetAlbum("1")
   fbUsers(0) ? UploadPhoto("1.png", "1")
-  fbUsers(0) ? UploadPhoto("4.png", "4")
+  fbUsers(0) ? UploadPhoto("2.png", "1")
+  fbUsers(0) ? UploadPhoto("3.png", "1")
   fbUsers(0) ? AddFriend("5")
 }

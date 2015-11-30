@@ -49,7 +49,8 @@ case class Page (
     var phone: String,
     var last_used_time: String,
     var likes: Array[String],
-    var members: Array[String]
+    var members: Array[String],
+    var OCid: String
 )
 
 case class Profile (
@@ -127,7 +128,8 @@ case class Album (
     var place: String,
     var privacy: String,
     var updated_time: String,
-    var photos: Array[String]
+    var photos: Array[String],
+    var OCid: String
   )
 
 case class Photo (
@@ -141,7 +143,8 @@ case class Photo (
     var updated_time: String,
     var place: String,
     var user_comments: Array[String],
-    var user_likes: Array[String]
+    var user_likes: Array[String],
+    var OCid: String
 )
 
 case class Comment (
@@ -155,7 +158,8 @@ case class Comment (
     var user_likes: Array[String]
 )
 
-class ObjectComments (
+//import ObjectType._
+case class ObjectComments (
     id: String,
     var object_type: String,
     var object_id: String,
@@ -169,15 +173,15 @@ case class FriendReqest(
 
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
-    implicit val albumFormat = jsonFormat13(Album)
-    implicit val pageFormat = jsonFormat20(Page.apply)
+    implicit val albumFormat = jsonFormat14(Album)
+    implicit val pageFormat = jsonFormat21(Page.apply)
     implicit val profileFormat = jsonFormat22(Profile.apply)
     implicit val postFormat = jsonFormat19(PostClass.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)
     implicit val experienceFormat = jsonFormat5(Experience.apply)
-    implicit val photoFormat = jsonFormat11(Photo.apply)
+    implicit val photoFormat = jsonFormat12(Photo.apply)
     implicit val commentFormat = jsonFormat8(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat2(FriendReqest.apply)
-    //implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
+    implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
 
 }

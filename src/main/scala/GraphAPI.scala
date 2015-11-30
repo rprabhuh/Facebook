@@ -11,11 +11,18 @@ import spray.httpx.SprayJsonSupport._
 import scala.util.parsing.json._
 import scala.collection.concurrent.TrieMap
 
+object ObjectType extends Enumeration {
+        type ObjectType = Value
+        val ALBUM, PHOTO, STATUS, POST, PAGE = Value
+}
+
+
 class RestInterface extends HttpServiceActor
   with GraphAPI {
 
   def receive = runRoute(routes)
 }
+
 
 trait GraphAPI extends HttpService with ActorLogging { 
   actor: Actor =>
@@ -31,10 +38,15 @@ trait GraphAPI extends HttpService with ActorLogging {
   var commentMap = new TrieMap[String, Comment]
   var objectCommentsMap = new TrieMap[String, ObjectComments]
   
+  val ALBUM = "ALBUM"
+  val PAGE = "PAGE"
+  val PHOTO = "PHOTO"
+
   var numalbums = 0
   var numPages = 0
   var numphotos = 0
   var numComments = 0
+  var numOC = 0
 
   implicit val timeout = Timeout(10 seconds)
   val format = new java.text.SimpleDateFormat()
@@ -51,165 +63,154 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    path("Album") {
-        get {
-          parameter("id") { id =>
-            println("ALBUM: GET request received for id " + id)
-            if(albumMap.contains(id))
-              complete {albumMap(id)}
-            else 
-              complete("The requested album was not found")
-          }
-        } ~
-        post {
-          entity(as[Album]) { album =>
+    pathPrefix("Album") {
+    	pathEnd {
+   			get {
+          		parameter("id") { id =>
+            		println("ALBUM: GET request received for id " + id)
+            		if(albumMap.contains(id))
+              			complete {albumMap(id)}
+            		else 
+              			complete("The requested album was not found")
+          		}
+        	} ~
+        	post {
+          		entity(as[Album]) { album =>
 
-            if (album.id == "null") {
-              numalbums +=1
-              var newAlbum = new Album((numalbums).toString,
-                  album.count, album.cover_photo, album.created_time,
-                  album.description, album.from, album.link, album.location,
-                  album.name, album.place, album.privacy, format.format(new java.util.Date()),Array(album.cover_photo))
-              albumMap(numalbums.toString) = newAlbum
-              println("-> User " + album.from + ": Album created with ID = " + newAlbum.id)
-              complete("Album created!")
-            }
-            else {
-              // Update an exising album
-              if(albumMap.contains(album.id)) {
-                albumMap(album.id) = album
-                complete("Album updated!")
-              } else {
-                complete("The requested album does not exist!")
-              }
-            }
-          }
-        } ~
-        delete {
-          parameter("del_id") { del_id =>
-            println("ALBUM: DELETE request received for del_id = " + del_id)
-            if(albumMap.contains(del_id)) {
-              albumMap.remove(del_id)
-              complete("Album with id = " + del_id + " was deleted!")
-            }
-            else 
-              complete("Album with id = " + del_id + " was not found")
-          }
-        }
-    } ~
-    path("Comment") {
-      post {
-        entity(as[Comment]) { comment =>
+            		if (album.id == "null") {
+
+              			numalbums +=1
+            			// Add to objectCommentsMap
+              			if (!objectCommentsMap.contains(album.OCid)) {
+              				////import ObjectType._
+              				numOC += 1;
+              				val OC = new ObjectComments(numOC.toString, ALBUM, numalbums.toString, Array(""))
+              				objectCommentsMap(numOC.toString) = OC
+              				println("-> User " + album.from + ": Album " + numalbums.toString + " added to objectCommentsMap")	
+              			}
+
+              			var newAlbum = new Album((numalbums).toString,
+                  			album.count, album.cover_photo, album.created_time,
+                  			album.description, album.from, album.link, album.location,
+                  			album.name, album.place, album.privacy, format.format(new java.util.Date()),
+                  			Array(album.cover_photo), numOC.toString)
+              			albumMap(numalbums.toString) = newAlbum
+              			println("-> User " + album.from + ": Album created with ID = " + newAlbum.id)
+              			
+              			
+              			complete("Album created!")
+            		}
+            		else {
+              			// Update an existing album
+              			if(albumMap.contains(album.id)) {
+              				var A = album
+              				A.OCid = albumMap(album.id).OCid
+                			albumMap(album.id) = A
+                			complete("Album updated!")
+              			} else {
+                			complete("The requested album does not exist!")
+              			}
+            		}
+          		}
+        	} ~
+        	delete {
+          		parameter("del_id") { del_id =>
+            		println("ALBUM: DELETE request received for del_id = " + del_id)
+            		if(albumMap.contains(del_id)) {
+            			
+            			// TODO: Delete all the comments on this album
+
+            			val OCid = albumMap(del_id).OCid
+              			if (objectCommentsMap.contains(OCid)) {
+              				objectCommentsMap.remove(OCid)
+              			}
+
+              			albumMap.remove(del_id)
+
+              			complete("Album with id = " + del_id + " was deleted!")
+            		}
+            		else 
+              			complete("Album with id = " + del_id + " was not found")
+          		}
+        	} 		
+    	} ~
+    	path("comment") {
+    		post {
+    			entity(as[Comment]) { comment =>
+    				
+    				// Create a new comment
+          			if (comment.id == "null") {
+            			numComments += 1
+            			var newComment = new Comment((numComments).toString, comment.object_id,
+                			comment.created_time, comment.from, comment.message, comment.parent,
+                			comment.user_comments, comment.user_likes)
+
+			            if (objectCommentsMap.contains(comment.object_id)) {
+			              commentMap(numComments.toString) = newComment
+			              
+			              // Update the objectCommentMap with this comment
+			              var currObj = objectCommentsMap(comment.object_id)
+			              currObj.comments = currObj.comments :+ newComment.id
+			              objectCommentsMap(comment.object_id) = currObj
+			              
+			              println("-> Comment created for Object " + newComment.object_id + " with ID = " + newComment.id)
+			              complete("Comment created!")
+			            }
+			            else
+			              complete("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
+          			}
           
-          // Create a new comment
-          if (comment.id == "null") {
-            numComments += 1
-            var newComment = new Comment((numComments).toString, comment.object_id,
-                comment.created_time, comment.from, comment.message, comment.parent,
-                comment.user_comments, comment.user_likes)
-
-            if (objectCommentsMap.contains(comment.object_id)) {
-              commentMap(numComments.toString) = newComment
-              
-              // Update the objectCommentMap with this comment
-              var currObj = objectCommentsMap(comment.object_id)
-              currObj.comments = currObj.comments :+ newComment.id
-              objectCommentsMap(comment.object_id) = currObj
-              
-              println("-> Comment created for Object " + newComment.object_id + " with ID = " + newComment.id)
-              complete("Comment created!")
-            }
-            else
-              complete("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
-          }
-          
-          // Update an existing comment
-          else {
-            if(commentMap.contains(comment.id)) {
-              commentMap(comment.id) = comment
-              complete("Comment with id = " + comment.id + " updated!")
-            } else {
-              complete("Comment with id = " + comment.id + " DOES NOT EXIST!")
-            }
-          }
-        }
-      } ~
-      delete {
-        parameter("del_id") { del_id =>
-          println("COMMENT: DELETE request received for del_id = " + del_id)
-      
-          if (objectCommentsMap.contains(del_id)) {              
-      
-            if(commentMap.contains(del_id)) {
-
-              var comment = commentMap(del_id)
-              
-              // Update the objectCommentMap with this comment
-              var currObj = objectCommentsMap(comment.object_id)
-              currObj.comments = currObj.comments.filter(! _.contains(del_id))
-              objectCommentsMap(comment.object_id) = currObj
-              
-              commentMap.remove(del_id)
-              complete("Comment with id = " + del_id + " was deleted!")
-            }
-            else
-              complete("Comment with id = " + del_id + " was not found")
-          }
-          else
-            complete("COMMENT: Parent Object with id = " + del_id + " DOES NOT EXIST!")
-        }
-      }
+          			// Update an existing comment
+          			else {
+            			if(commentMap.contains(comment.id) && objectCommentsMap.contains(comment.object_id)) {
+              				commentMap(comment.id) = comment
+              				complete("Comment with id = " + comment.id + " updated!")
+            			} else {
+              				complete("Comment with id = " + comment.id + " DOES NOT EXIST!")
+            			}
+          			}
+    			}
+    		} ~
+    		delete {
+        		parameter("del_id") { del_id =>
+          			println("COMMENT: DELETE request received for del_id = " + del_id)
+	      
+          			if (objectCommentsMap.contains(del_id)) {              
+	      
+            			if(commentMap.contains(del_id)) {
+	
+              				var comment = commentMap(del_id)
+	              
+              				// Update the objectCommentMap with this comment
+              				var currObj = objectCommentsMap(comment.object_id)
+              				currObj.comments = currObj.comments.filter(! _.contains(del_id))
+              				objectCommentsMap(comment.object_id) = currObj
+				              
+              				commentMap.remove(del_id)
+              				complete("Comment with id = " + del_id + " was deleted!")
+            			}
+            			else
+          	    			complete("Comment with id = " + del_id + " was not found")
+          			}
+          			else
+            			complete("COMMENT: Parent Object with id = " + del_id + " DOES NOT EXIST!")
+        		}
+      		}
+    	}        
     } ~
-    pathPrefix("Conversation") {
-      pathEnd {
-        get {
-          complete("GET for Conversation")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Conversation")
-        }
-      }
+    pathPrefix("Comment") {
+    	get {
+    		parameter("id") { id =>
+    			if (objectCommentsMap.contains(id))
+    				complete(objectCommentsMap(id))
+    			else
+    				complete("Not found")
+    		}
+    	}
     } ~
     pathPrefix("FriendList") {
-      pathEnd {
-        get {
-          complete("GET for FriendList")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for FriendList")
-        }
-      }
-    } ~
-    pathPrefix("ObjectComments") {
-      pathEnd {
-        get {
-          complete("GET for ObjectComments")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for ObjectComments")
-        }
-      }
-    } ~
-    pathPrefix("ObjectLikes") {
-      pathEnd {
-        get {
-          complete("GET for ObjectLikes")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for ObjectLikes")
-        }
+      get {
+        complete("GET for FriendList")
       }
     } ~
     pathPrefix("Post") {
@@ -225,7 +226,7 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    path("Page") {
+    pathPrefix("Page") {
         get {
           parameter("id") { id =>
             println("PAGE: GET request received for id " + id)
@@ -240,21 +241,34 @@ trait GraphAPI extends HttpService with ActorLogging {
 
             if (page.id == "null") {
               numPages += 1
-              var newPage = new Page((numPages).toString, page.about, page.can_post,
+
+            // Add to objectCommentsMap
+            if (!objectCommentsMap.contains(page.OCid)) {
+              	//import ObjectType._
+              	numOC += 1;
+              	val OC = new ObjectComments(numOC.toString, PAGE, numPages.toString, Array(""))
+              	objectCommentsMap(numOC.toString) = OC
+              	println("-> User " + page.from + ": Page " + numPages.toString + " added to objectCommentsMap")	
+            }
+
+            var newPage = new Page((numPages).toString, page.about, page.can_post,
                   page.cover, page.description, page.emails, page.is_community_page,
                   page.is_permanently_closed, page.is_published, page.like_count, page.link,
                   page.location, page.from, page.name,
                   page.parent_page, page.posts, page.phone, format.format(new java.util.Date()),
-                  page.likes, page.members)
+                  page.likes, page.members, numOC.toString)
 
               pageMap(numPages.toString) = newPage
               println("-> User " + page.from + ": Page created with ID = " + newPage.id)
               complete("Page created!")
             }
             else {
-              // Update an exising album
+
+              // Update an exising page
               if(pageMap.contains(page.id)) {
-                pageMap(page.id) = page
+              	var P = page
+              	P.OCid = pageMap(page.id).OCid
+                pageMap(page.id) = P
                 complete("Page updated!")
               } else {
                 complete("The requested page does not exist!")
@@ -266,6 +280,13 @@ trait GraphAPI extends HttpService with ActorLogging {
           parameter("del_id") { del_id =>
             println("PAGE: DELETE request received for id = " + del_id)
             if(pageMap.contains(del_id)) {
+
+           		// TODO: Delete all the comments on this page
+            	val OCid = pageMap(del_id).OCid
+              	if (objectCommentsMap.contains(OCid)) {
+              		objectCommentsMap.remove(OCid)
+              	}
+
               pageMap.remove(del_id)
               complete("Page with id = " + del_id + " was deleted!")
             }
@@ -274,7 +295,7 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         }
     } ~
-    path("Photo") {
+    pathPrefix("Photo") {
         get {
           parameter("id") { id =>
             println("GET request received for id " + id)
@@ -288,15 +309,32 @@ trait GraphAPI extends HttpService with ActorLogging {
           println("Got a post for photos")
           entity(as[Photo]) { photo =>
  
+ 			println(numphotos.toString,
+                photo.album, format.format(new java.util.Date()),
+                photo.from, photo.image, photo.link, photo.name,
+                format.format(new java.util.Date()), photo.place,
+                photo.user_comments, photo.user_likes, numOC.toString)
+
             if(photo.id == "null") {
               if(albumMap.contains(photo.album)) {
-              numphotos += 1
+
+              	numphotos += 1
+              	
+              	// Add to objectCommentsMap
+            	if (!objectCommentsMap.contains(photo.OCid)) {
+              		//import ObjectType._
+              		numOC += 1;
+              		val OC = new ObjectComments(numOC.toString, PHOTO, numphotos.toString, Array(""))
+              		objectCommentsMap(numOC.toString) = OC
+              		println("-> User " + photo.from + ": Page " + numphotos.toString + " added to objectCommentsMap")	
+            	}
+
+
               var newPhoto = new Photo(numphotos.toString,
                 photo.album, format.format(new java.util.Date()),
                 photo.from, photo.image, photo.link, photo.name,
                 format.format(new java.util.Date()), photo.place,
-                photo.user_comments, photo.user_likes
-                )
+                photo.user_comments, photo.user_likes, numOC.toString)
               photoMap(numphotos.toString) = newPhoto
               var tempObj = albumMap(photo.album)
               tempObj.photos = tempObj.photos :+ newPhoto.id
@@ -351,7 +389,7 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    path("Profile") {
+    pathPrefix("Profile") {
        get {
           parameter("id") { id =>
             println("PROFILE: GET request received for id " + id)
@@ -397,7 +435,7 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         }
     }~
-    path("AddFriend") {
+    pathPrefix("AddFriend") {
       post{
         entity(as[FriendReqest]) { fr =>
         //Add from

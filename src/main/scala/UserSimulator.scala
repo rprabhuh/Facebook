@@ -22,9 +22,16 @@ import java.io.File
 case class Start()
 case class CreateAlbum()
 case class UpdateAlbum()
-case class UploadPhoto(id: String, album_id: String)
 case class GetAlbum(id: String)
+case class DeleteAlbum(id: String)
+case class UploadPhoto(id: String, album_id: String)
+case class DeletePhoto(id: String)
 case class AddFriend(id:String)
+case class CreateProfile()
+case class UpdateProfile()
+case class DeleteProfile(id: String)
+
+
 class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   val system = systemArg
@@ -51,7 +58,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "place: String",
             "privacy: String",
             "null",                           // updated_time
-            Array("cover_photo"))
+            Array("cover_photo"), "-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
@@ -81,10 +88,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             "place: String",
             "privacy: String",
             "null",                           // updated_time
-            Array("cover_photo"))
+            Array("cover_photo"), "1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         println("RESPONSE: " + response)
+
+      case DeleteAlbum(id) =>
+		println("User " + self.path.name + " deleting Album " + id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
+
 
 
       case UploadPhoto(id, album_id) =>
@@ -108,15 +120,54 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           "updated_time",
           "place", 
           list,
-          list)
+          list, "-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         println("RESPONSE: " + response)
+
+      case DeletePhoto(id) => 
+		println("User " + self.path.name + " deleting photo " + id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo", id))
+
 
       case AddFriend(id) =>
         import FBJsonProtocol._
         var A = new FriendReqest(self.path.name, id)
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
+
+
+      case CreateProfile =>
+		println("User " + self.path.name + " creating a profile")
+
+		import FBJsonProtocol._
+		var P = new Profile (self.path.name, "bio", "birthday",
+			Array("education"), "email", "first_name", "gender", "hometown",
+			Array("interested_in"), Array("languages"), "last_name", "link",
+			"location", "middle_name", "political", "relationship_status",
+			"religion", "significant_other", "updated_time", "website",
+			Array("work"), "cover")
+
+		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
+
+
+	case UpdateProfile =>
+		println("User " + self.path.name + " updating profile")
+
+		import FBJsonProtocol._
+		var P = new Profile (self.path.name, "bio", "birthday",
+			Array("education"), "email", "first_name", "gender", "hometown",
+			Array("interested_in"), Array("languages"), "last_name", "link",
+			"location", "middle_name", "political", "relationship_status",
+			"religion", "significant_other", "updated_time", "website",
+			Array("work"), "cover")
+
+
+		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
+
+
+	case DeleteProfile =>
+		println("User " + self.path.name + " deleting Profile")
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile", self.path.name))
 
   }
 }
