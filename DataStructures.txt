@@ -87,9 +87,7 @@ Post - Facebook posts
 
 FriendList - List of friends of a user
     id numeric string
-    name string
-    owner numeric string
-	members Profile[]
+	members String[]
 
 Experience - A sub type used internally
 id numeric string
