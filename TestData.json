@@ -99,3 +99,15 @@
     "user_comments": ["Array[String]"],
     "user_likes": ["Array[String]"]
 }
+
+
+//STATUS
+{
+    "id": "null",
+    "created_time": "String",
+    "from": "String",
+    "location": "String",
+    "message": "String",
+    "updated_time": "String",
+    "OCid": "String"
+}
