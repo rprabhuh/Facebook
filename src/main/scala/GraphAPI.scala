@@ -1,3 +1,4 @@
+import spray.http.StatusCodes
 import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.util.Timeout
@@ -37,7 +38,7 @@ trait GraphAPI extends HttpService with ActorLogging {
   var photoMap = new TrieMap[String, Photo]
   var commentMap = new TrieMap[String, Comment]
   var objectCommentsMap = new TrieMap[String, ObjectComments]
-  
+
   val ALBUM = "ALBUM"
   val PAGE = "PAGE"
   val PHOTO = "PHOTO"
@@ -69,9 +70,11 @@ trait GraphAPI extends HttpService with ActorLogging {
           		parameter("id") { id =>
             		println("ALBUM: GET request received for id " + id)
             		if(albumMap.contains(id))
-              			complete {albumMap(id)}
-            		else 
-              			complete("The requested album was not found")
+              			complete (albumMap(id))
+            		else {
+                  // Error placed in album.description
+                  complete(Album("-1", 0, "", "", "The requested album cannot be found.", "", "", "", "", "", "", "", Array(""), "-1"))
+                }
           		}
         	} ~
         	post {
@@ -89,7 +92,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               				println("-> User " + album.from + ": Album " + numalbums.toString + " added to objectCommentsMap")	
               			}
 
-              			var newAlbum = new Album((numalbums).toString,
+              			val newAlbum = new Album((numalbums).toString,
                   			album.count, album.cover_photo, album.created_time,
                   			album.description, album.from, album.link, album.location,
                   			album.name, album.place, album.privacy, format.format(new java.util.Date()),
@@ -103,7 +106,7 @@ trait GraphAPI extends HttpService with ActorLogging {
             		else {
               			// Update an existing album
               			if(albumMap.contains(album.id)) {
-              				var A = album
+              				val A = album
               				A.OCid = albumMap(album.id).OCid
                 			albumMap(album.id) = A
                 			complete("Album updated!")
@@ -141,7 +144,7 @@ trait GraphAPI extends HttpService with ActorLogging {
     				// Create a new comment
           			if (comment.id == "null") {
             			numComments += 1
-            			var newComment = new Comment((numComments).toString, comment.object_id,
+            			val newComment = new Comment((numComments).toString, comment.object_id,
                 			comment.created_time, comment.from, comment.message, comment.parent,
                 			comment.user_comments, comment.user_likes)
 
@@ -251,7 +254,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               	println("-> User " + page.from + ": Page " + numPages.toString + " added to objectCommentsMap")	
             }
 
-            var newPage = new Page((numPages).toString, page.about, page.can_post,
+            val newPage = new Page((numPages).toString, page.about, page.can_post,
                   page.cover, page.description, page.emails, page.is_community_page,
                   page.is_permanently_closed, page.is_published, page.like_count, page.link,
                   page.location, page.from, page.name,
@@ -302,18 +305,14 @@ trait GraphAPI extends HttpService with ActorLogging {
             if(photoMap.contains(id))
               complete {photoMap(id)}
             else 
-              complete("The requested photo was not found")
+            	// Error description in photo.name
+              complete(Photo("-1", "", "", "", Array(-1), "",
+              	"The requested photo cannot be found.", "", "", Array(""), Array(""), ""))
           }
         }~
         post {
           println("Got a post for photos")
           entity(as[Photo]) { photo =>
- 
- 			println(numphotos.toString,
-                photo.album, format.format(new java.util.Date()),
-                photo.from, photo.image, photo.link, photo.name,
-                format.format(new java.util.Date()), photo.place,
-                photo.user_comments, photo.user_likes, numOC.toString)
 
             if(photo.id == "null") {
               if(albumMap.contains(photo.album)) {
@@ -358,7 +357,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               complete("Photo with id = " + del_id + " was deleted!")
             }
             else {
-              complete("Profile with id = " + del_id + " was not found")
+              complete("Photo with id = " + del_id + " was not found")
             }
           }
         }
@@ -376,27 +375,18 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }
     } ~
-    pathPrefix("Thread") {
-      pathEnd {
-        get {
-          complete("GET for Thread")
-        }
-      } ~
-      path(DoubleNumber) { (id) =>
-        post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Thread")
-        }
-      }
-    } ~
     pathPrefix("Profile") {
+      pathEnd {
        get {
           parameter("id") { id =>
             println("PROFILE: GET request received for id " + id)
             if(profileMap.contains(id))
               complete {profileMap(id)}
-            else 
-              complete("The requested profile was not found")
+            else
+            	// Error in profile.bio
+            	complete(Profile("-1", "The requested profile was not found", "", Array(""), "", "", "", "", Array(""), Array(""),
+            		"", "", "", "", "", "", "", "", "", "", Array(""), ""))
+              	//complete("The requested profile was not found")
           }
         } ~
         post {
@@ -410,7 +400,7 @@ trait GraphAPI extends HttpService with ActorLogging {
 
             // Creating a user profile
             else {
-              var newProfile = new Profile(profile.id, profile.bio, profile.birthday,
+              val newProfile = new Profile(profile.id, profile.bio, profile.birthday,
                 profile.education, profile.email, profile.first_name, profile.gender,
                 profile.hometown, profile.interested_in, profile.languages, profile.last_name,
                 profile.link, profile.location, profile.middle_name, profile.political,
@@ -434,6 +424,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               complete("Profile with id = " + del_id + " was not found")
           }
         }
+      }
     }~
     pathPrefix("AddFriend") {
       post{
@@ -449,7 +440,7 @@ trait GraphAPI extends HttpService with ActorLogging {
           }  
         } else {
           //Create a new entry
-          var tempObj = new FriendList(fr.fromid, Array[String](fr.toid))
+          val tempObj = new FriendList(fr.fromid, Array[String](fr.toid))
           friendlistMap(fr.fromid) = tempObj
         }
 
