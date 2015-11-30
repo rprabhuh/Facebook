@@ -32,17 +32,18 @@ trait GraphAPI extends HttpService with ActorLogging {
     var experienceMap = new TrieMap[String, Experience]
     var pageMap = new TrieMap[String, Page]
     var profileMap = new TrieMap[String, Profile]
-    var postclassMap = new TrieMap[String, PostClass]
     var friendlistMap = new TrieMap[String, FriendList]
     var photoMap = new TrieMap[String, Photo]
     var commentMap = new TrieMap[String, Comment]
     var objectCommentsMap = new TrieMap[String, ObjectComments]
+    var statusMap = new TrieMap[String, Status]
 
     val ALBUM = "ALBUM"
     val PAGE = "PAGE"
     val PHOTO = "PHOTO"
 
     var numalbums = 0
+    var numstatus = 0
     var numPages = 0
     var numphotos = 0
     var numComments = 0
@@ -76,9 +77,7 @@ trait GraphAPI extends HttpService with ActorLogging {
         } ~
         post {
           entity(as[Album]) { album =>
-
             if (album.id == "null") {
-
               numalbums +=1
               // Add to objectCommentsMap
               if (!objectCommentsMap.contains(album.OCid)) {
@@ -405,13 +404,45 @@ trait GraphAPI extends HttpService with ActorLogging {
     pathPrefix("Status") {
       pathEnd {
         get {
-          complete("GET for Status")
+          parameter("id") { id =>
+            println("STATUS: GET request received for id " + id)
+            if(statusMap.contains(id))
+              complete {statusMap(id)}
+            else 
+              complete("The requested Status was not found")
+          }
+        }~
+        post {
+          entity(as[Status]) { status =>
+            if(status.id == "null") {
+              numstatus += 1
+              //Add status to statusMap
+              if(!objectCommentsMap.contains(status.OCid)) {
+                numOC += 1;
+                val OC = new ObjectComments(numOC.toString, STATUS, numstatus.toString, Array(""))
+                objectCommentsMap(numOC.toString) = OC
+                println("-> User " + status.from + ": Status" + numalbums.toString + " added to objectCommentsMap")
+                var newStatus = new Status((numstatus).toString,
+                  format.format(new java.util.Date()),
+                  status.from, status.location, status. message,
+                  format.format(new java.util.Date()),
+                  numOC.toString())
+                statusMap(numstatus.toString) = newStatus
+
+              }
+
+            }
+            complete("Completed")
+          }
+        } ~
+        delete {
+            complete("Deleted")
         }
       } ~
-      path(DoubleNumber) { (id) =>
+      path("comment") {
         post {
-          requestContext => println(id)
-          requestContext.complete("Let us POST for Status")
+          println("Got a post for comment")
+          complete("Got a post for comment")
         }
       }
     } ~

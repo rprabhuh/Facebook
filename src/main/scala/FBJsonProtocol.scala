@@ -86,26 +86,14 @@ case class Profile (
     var cover: String
   )
 
-case class PostClass (
+case class Status (
     id: String,
-    var caption: String,
     var created_time: String,
-    var description: String,
     var from: String,
-    var icon: String,
-    var is_hidden: Boolean,
-    var link: String,
     var location: String,
     var message: String,
-    var name: String,
-    var object_id: String,
-    var picture: Array[String],
-    var privacy: String,
-    var shares: String,
-    var status_type: String,
-    var to: Array[String],
-    var post_type: String,
-    var updated_time: String
+    var updated_time: String,
+    var OCid: String
   )
 
 
@@ -176,7 +164,7 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val albumFormat = jsonFormat14(Album)
     implicit val pageFormat = jsonFormat21(Page.apply)
     implicit val profileFormat = jsonFormat22(Profile.apply)
-    implicit val postFormat = jsonFormat19(PostClass.apply)
+    implicit val statusFormat = jsonFormat7(Status.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)
     implicit val experienceFormat = jsonFormat5(Experience.apply)
     implicit val photoFormat = jsonFormat12(Photo.apply)
