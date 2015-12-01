@@ -13,7 +13,7 @@ $ sbt compile
 # Running
 To run the program, type 'sbt run' at the command prompt to run through the 'sbt' command-prompt.
 ```
-$ sbt run
+$ sbt run <number_of_users>
 ```
 
 # Command Line Arguments

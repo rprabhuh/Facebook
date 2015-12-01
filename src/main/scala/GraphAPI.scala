@@ -82,8 +82,8 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Album]) { album =>
             if (album.id == "null") {
               if(album.auth != album.from) {
-                println(album.auth + " is not allowed to create this album")
-                complete(album.auth + " is not allowed to create this album")
+                println(album.auth + " is not allowed to create an album")
+                complete(album.auth + " is not allowed to create an album")
               } else {
                 numalbums +=1
                 // Add to objectCommentsMap
@@ -108,8 +108,8 @@ trait GraphAPI extends HttpService with ActorLogging {
                 // Update an existing album
                 if(albumMap.contains(album.id)) {
                   if(albumMap(album.id).from != album.auth) {
-                    println(album.auth + " is not allowed to create this album")
-                    complete(album.auth + " is not allowed to create this album")
+                    println(album.auth + " is not allowed to update album " + album.id)
+                    complete(album.auth + " is not allowed to update album " + album.id)
                   } else { 
                     var A = album
                     A.OCid = albumMap(album.id).OCid
@@ -312,8 +312,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Update an exising page
             if(pageMap.contains(page.id)) {
               if(pageMap(page.id).from != page.auth) {
-                println(page.auth + " is not allowed to edit this page")
-                complete(page.auth + " is not allowed to edit this page")
+                println(page.auth + " is not allowed to update page "+page.id )
+                complete(page.auth + " is not allowed to update page "+page.id )
               } else {
                 var P = page
                 P.OCid = pageMap(page.id).OCid
@@ -378,8 +378,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             } else {
               if(albumMap.contains(photo.album)) {
                 if(albumMap(photo.album).from != photo.auth) {
-                  println(photo.auth+ " is not allowed to post to this album")
-                  complete(photo.auth+ " is not allowed to post to this album")
+                  println(photo.auth+ " is not allowed to post photos to album" + photo.album)
+                  complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
                 } else {
 
                   numphotos += 1
@@ -458,8 +458,8 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Status]) { status =>
             if(status.id == "null") {
               if(status.auth != status.from) {
-                println(status.auth + " is not allowed to post this status")
-                complete(status.auth + " is not allowed to post this status")
+                println(status.auth + " is not allowed to post statuses to the wall of " + status.from)
+                complete(status.auth + " is not allowed to post statuses to the wall of " + status.from)
               } else {
                 numstatus += 1
                 //Add status to statusMap
@@ -482,8 +482,8 @@ trait GraphAPI extends HttpService with ActorLogging {
                 //Update a status
                 if(statusMap.contains(status.id)) {
                   if(statusMap(status.id).from != status.auth) {
-                    println(status.auth + " is not allowed to update this status")
-                    complete(status.auth + " is not allowed to update this status")
+                    println(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
+                    complete(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
                   } else {
                     var S = status
                     S.OCid = statusMap(status.id).OCid
@@ -586,8 +586,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Existing user
             if(profileMap.contains(profile.id)) {
               if(profileMap(profile.id).auth != profile.auth) {
-                println(profile.auth + " is not allowed to update this profile")
-                complete(profile.auth+ " is not allowed to update this profile")
+                println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
+                complete(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
               } else {
                 profileMap(profile.id) = profile
                 println("Profile with id " + profile.id + " updated!")
