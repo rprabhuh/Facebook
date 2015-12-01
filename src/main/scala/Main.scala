@@ -45,22 +45,14 @@ override def main(args: Array[String]) {
   var i = 0
   
   import scala.collection.immutable.HashMap  
-  import scala.collection.mutable.ArrayBuffer  
-  // Maintain data for each user for testing and verification purposes
-  class UserData(uid: String) {
-  	var id: String = uid
-  	var albums: ArrayBuffer[String] = ArrayBuffer("")
-  	var photos: HashMap[String, ArrayBuffer[String]] = HashMap()
-  }
+  import scala.collection.mutable.ArrayBuffer
 
-  var NETWORK_SIZE = 10
+  var NETWORK_SIZE = 100
 
   var fbUsers: Array[ActorRef] = new Array[ActorRef](NETWORK_SIZE)
-  var users: Array[UserData] = new Array[UserData](NETWORK_SIZE)
   for (i <- 0 until NETWORK_SIZE) {
     fbUsers(i) = system.actorOf(Props(new UserSimulator(system)), name = i.toString)
     fbUsers(i) ? CreateProfile
-  	users(i) = new UserData(i.toString)
   }
 
   println("\nProfiles created!")
@@ -68,25 +60,12 @@ override def main(args: Array[String]) {
 
   var numAlbumsCreated = 0
   for (i <- 0 until NETWORK_SIZE) {
-     if (i%10 == 0)  { 
+     if (i%30 == 0)  { 
      	fbUsers(i) ? CreateAlbum
      	numAlbumsCreated += 1
-     	users(i).albums.append(numAlbumsCreated.toString)
      }
   }
   
-/*  def UpdatePhotos(userid: String, photo: String, album: String) = {
-  	if (users(i).photos.contains(album)) {
-  		var P = users(i).photos(album)
-  		P.append(photo)
-  		users(i).photos + (album -> P)
-  	}
-  	else {
-
-  	}
-  }*/
-
-
 
   import scala.util.Random
   import scala.math.abs
@@ -103,37 +82,25 @@ override def main(args: Array[String]) {
     else
       tmp = 1
 
-    if (i%20 == 0) {
-      fbUsers(i) ? UploadPhoto("1.png", tmp.toString)
-	  	//UpdatePhotos(i.toString, "1", tmp.toString)
-	  }
+    if (i%20 == 0) fbUsers(i) ? UploadPhoto("1.png", tmp.toString)
+	  	  
+	  if (i%30 == 0) fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
 	  
-	  if (i%30 == 0) {
-	  	fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
-	  	//UpdatePhotos(i.toString, "2", tmp.toString)
-	  } 
+	  if (i%50 == 0) fbUsers(i) ? UploadPhoto("3.png", tmp.toString)
 	  
-	  if (i%50 == 0) {
-	  	fbUsers(i) ? UploadPhoto("3.png", tmp.toString)
-	  	//UpdatePhotos(i.toString, "3", tmp.toString)
-	  } 
-	  
-	  if (i !=0 && i%20 == 0) {
-	  	fbUsers(i) ? AddFriend((i-10).toString)
-	  }
+	  if (i !=0 && i%20 == 0) fbUsers(i) ? AddFriend((i-10).toString)
 
     if (i%20 == 0) fbUsers(i) ? CreateComment(tmp.toString)
     if (i%60 == 0) fbUsers(i) ! UpdateComment("1", tmp.toString)
     if (i%90 == 0) fbUsers(i) ! DeleteComment("2")
     if (i%90 == 0) fbUsers(i) ! DeleteComment(tmp.toString)
-  }
 
   Thread sleep(100)
 
-  fbUsers(0) ! GetAlbum("189783748374389")
+  if (i%100 == 0) fbUsers(i) ! GetAlbum("189783748374389")
   if (i%50 == 0) fbUsers(i) ! GetAlbum(tmp.toString)
 
-  fbUsers(5) ! GetPhoto("12379872834")
+  if (i%500 == 0) fbUsers(i) ! GetPhoto("12379872834")
   if (i%25 == 0) fbUsers(i) ! GetPhoto("1")
 
   fbUsers(0) ! GetProfile("1023789748")
@@ -142,11 +109,16 @@ override def main(args: Array[String]) {
   if (i%40 ==0) fbUsers(i) ! UpdateProfile
   if (i%80 ==0) fbUsers(i) ! DeleteProfile
 
-  if (i%20 == 0) fbUsers(i) ! UpdateStatus
+  if (i%20 == 0) fbUsers(i) ! UpdateStatus("1")
   
   fbUsers(0) ! DeleteStatus("1333987492")
   if (i%60 == 0) fbUsers(i) ! DeleteStatus("1")
+}
 
+  
+  println("Shutting down the server..")
+  Thread sleep(10000)
+  system.shutdown
 }
 
 
