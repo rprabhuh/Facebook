@@ -83,8 +83,8 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Album]) { album =>
             if (album.id == "null") {
               if(album.auth != album.from) {
-                println("You are not allowed to create this album")
-                complete("You are not allowed to create this album")
+                println(album.auth + " is not allowed to create this album")
+                complete(album.auth + " is not allowed to create this album")
               } else {
                 numalbums +=1
                 // Add to objectCommentsMap
@@ -109,8 +109,8 @@ trait GraphAPI extends HttpService with ActorLogging {
                 // Update an existing album
                 if(albumMap.contains(album.id)) {
                   if(albumMap(album.id).from != album.auth) {
-                    println("You are not allowed to create this album")
-                    complete("You are not allowed to create this album")
+                    println(album.auth + " is not allowed to create this album")
+                    complete(album.auth + " is not allowed to create this album")
                   } else { 
                     var A = album
                     A.OCid = albumMap(album.id).OCid
@@ -287,8 +287,8 @@ trait GraphAPI extends HttpService with ActorLogging {
 
           if (page.id == "null") {
             if(page.auth != page.from) {
-              println("You are not allowed to create this page")
-              complete("You are not allowed to create this page")
+              println(page.auth + " is not allowed to create this page")
+              complete(page.auth + " is not allowed to create this page")
             } else {
               numPages += 1
 
@@ -318,8 +318,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Update an exising page
             if(pageMap.contains(page.id)) {
               if(pageMap(page.id).from != page.auth) {
-                println("You are not allowed to edit this page")
-                complete("You are not allowed to edit this page")
+                println(page.auth + " is not allowed to edit this page")
+                complete(page.auth + " is not allowed to edit this page")
               } else {
                 var P = page
                 P.OCid = pageMap(page.id).OCid
@@ -381,13 +381,13 @@ trait GraphAPI extends HttpService with ActorLogging {
 
           if(photo.id == "null") {
             if(photo.auth != photo.from) {
-              println("You are not allowed to post this picture")
-              complete("You are not allowed to post this picture")
+              println(photo.auth + " is not allowed to post this picture")
+              complete(photo.auth+ " is not allowed to post this picture")
             } else {
               if(albumMap.contains(photo.album)) {
                 if(albumMap(photo.album).from != photo.auth) {
-                  println("You are not allowed to post to this album")
-                  complete("You are not allowed to post to this album")
+                  println(photo.auth+ " is not allowed to post to this album")
+                  complete(photo.auth+ " is not allowed to post to this album")
                 } else {
 
                   numphotos += 1
@@ -467,8 +467,8 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Status]) { status =>
             if(status.id == "null") {
               if(status.auth != status.from) {
-                println("You are not allowed to post this status")
-                complete("You are not allowed to post this status")
+                println(status.auth + " is not allowed to post this status")
+                complete(status.auth + " is not allowed to post this status")
               } else {
                 numstatus += 1
                 //Add status to statusMap
@@ -491,8 +491,8 @@ trait GraphAPI extends HttpService with ActorLogging {
                 //Update a status
                 if(statusMap.contains(status.id)) {
                   if(statusMap(status.id).from != status.auth) {
-                    println("You are not allowed to update this status")
-                    complete("You are not allowed to update this status")
+                    println(status.auth + " is not allowed to update this status")
+                    complete(status.auth + " is not allowed to update this status")
                   } else {
                     var S = status
                     S.OCid = statusMap(status.id).OCid
@@ -597,8 +597,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Existing user
             if(profileMap.contains(profile.id)) {
               if(profileMap(profile.id).auth != profile.auth) {
-                println("You are not allowed to update this profile")
-                complete("You are not allowed to update this profile")
+                println(profile.auth + " is not allowed to update this profile")
+                complete(profile.auth+ " is not allowed to update this profile")
               } else {
                 profileMap(profile.id) = profile
                 println("Profile with id " + profile.id + " updated!")
@@ -641,8 +641,8 @@ trait GraphAPI extends HttpService with ActorLogging {
         entity(as[FriendReqest]) { fr =>
           //Add from
           if(fr.fromid != fr.auth && fr.toid != fr.auth) {
-            println("You are not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
-            complete("You are not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
+            println(fr.auth + " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
+            complete(fr.auth+ " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
           } else {
             if(profileMap.contains(fr.toid) && profileMap.contains(fr.fromid)) {
               if(friendlistMap.contains(fr.fromid)) {
