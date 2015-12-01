@@ -175,7 +175,6 @@ trait GraphAPI extends HttpService with ActorLogging {
       path("comment") {
         post {
           entity(as[Comment]) { comment =>
-
             // Create a new comment
             if (comment.id == "null") {
               numComments += 1
@@ -280,7 +279,6 @@ trait GraphAPI extends HttpService with ActorLogging {
       } ~
       post {
         entity(as[Page]) { page =>
-
           if (page.id == "null") {
             if(page.auth != page.from) {
               println(page.auth + " is not allowed to create this page")
@@ -371,9 +369,8 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }~
       post {
-        println("Got a post for photos")
         entity(as[Photo]) { photo =>
-
+        println("Got a post for photos")
           if(photo.id == "null") {
             if(photo.auth != photo.from) {
               println(photo.auth + " is not allowed to post this picture")
@@ -438,8 +435,8 @@ trait GraphAPI extends HttpService with ActorLogging {
             println("Photo with id = " + del_id + " was deleted!")
             complete("Photo with id = " + del_id + " was deleted!")
           } else {
-            println("Profile with id = " + del_id + " was not found")
-            complete("Profile with id = " + del_id + " was not found")
+            println("Photo with id = " + del_id + " was not found")
+            complete("Photo with id = " + del_id + " was not found")
           }
         }
       }
@@ -586,7 +583,6 @@ trait GraphAPI extends HttpService with ActorLogging {
         } ~
         post {
           entity(as[Profile]) { profile =>
-
             // Existing user
             if(profileMap.contains(profile.id)) {
               if(profileMap(profile.id).auth != profile.auth) {
