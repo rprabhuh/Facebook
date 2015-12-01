@@ -59,7 +59,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
 
-        val A = new Album("null",
+        val A = new Album(
+            self.path.name,
+            "null",
             0,
             "33",
             "12:23:12",
@@ -124,7 +126,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
 
-        var A = new Album("null",
+        var A = new Album(
+            self.path.name,
+            "null",
             0,
             "33",
             "12:23:12",
@@ -158,7 +162,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val list = Array("a","b","c")
         
         import FBJsonProtocol._
-        var A = new Photo("null",
+        var A = new Photo(
+          "from",
+          "null",
           album_id,
           "created_time",
           "from",
@@ -215,15 +221,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
       case AddFriend(id) =>
         import FBJsonProtocol._
-        var A = new FriendReqest(self.path.name, id)
+        var A = new FriendReqest(self.path.name, self.path.name, id)
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
 
     case CreateProfile =>
 		 println("User " + self.path.name + " creating a profile")
 
 		 import FBJsonProtocol._
-		 val P = new Profile (self.path.name, "bio", "birthday",
-			   Array("education"), "email", "first_name", "gender", "hometown",
+		 val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
+			   "email", "first_name", "gender", "hometown",
 			   Array("interested_in"), Array("languages"), "last_name", "link",
 			  "location", "middle_name", "political", "relationship_status",
 			  "religion", "significant_other", "updated_time", "website",
@@ -269,8 +275,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		println("User " + self.path.name + " updating profile")
 
 		import FBJsonProtocol._
-		val P = new Profile (self.path.name, "bio", "birthday",
-			Array("education"), "email", "first_name", "gender", "hometown",
+		val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
+			"email", "first_name", "gender", "hometown",
 			Array("interested_in"), Array("languages"), "last_name", "link",
 			"location", "middle_name", "political", "relationship_status",
 			"religion", "significant_other", "updated_time", "website",
