@@ -13,7 +13,7 @@ $ sbt compile
 # Running
 To run the program, type 'sbt run' at the command prompt to run through the 'sbt' command-prompt.
 ```
-$ sbt run
+$ sbt run <number_of_users>
 ```
 
 # Command Line Arguments
@@ -45,6 +45,7 @@ The program emulates the Facebook API. For this, the data structures and API tha
 
 The program simulates real-world Facebook behavior. The requests and the respective responses can be seen on the terminal. A sample run of the program gives the following:
 ```
+
 ```
 
 The program was run for a maximum of 100K users.
