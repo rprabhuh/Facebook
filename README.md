@@ -21,6 +21,7 @@ There are no command-line arguments.
 
 # API
 The program emulates the Facebook API. For this, the data structures and API that are used by Facebook were considered. The APIs that we were implemented are:
+```
 * *CreateProfile* - Create a profile for the current user
 * *GetProfile* - User can retrieve his own profile or that of another user
 * *UpdateProfile* - Update the profile of the current user
@@ -42,6 +43,8 @@ The program emulates the Facebook API. For this, the data structures and API tha
 * *UpdatePage* - User can update the details of a page that he had created.
 * *DeletePage* - User can delete a page
 * *AddFriend* - User can send a friend request to another user
+```
+Note: Status is analogous to post 
 
 The program simulates Facebook user behavior. The following gives the behavior of users in our Facebook simulator.
 ```
