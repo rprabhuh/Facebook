@@ -70,7 +70,6 @@ trait GraphAPI extends HttpService with ActorLogging {
           parameter("id") { id =>
             println("ALBUM: GET request received for id " + id)
             if(albumMap.contains(id)){
-              println(albumMap(id))
               complete {albumMap(id)}
             } else{
               // Error description in album.description
@@ -247,7 +246,6 @@ trait GraphAPI extends HttpService with ActorLogging {
       get {
         parameter("id") { id =>
           if (objectCommentsMap.contains(id)) {
-            println(objectCommentsMap(id))
             complete(objectCommentsMap(id))
           } else {
             println("Not found")
@@ -260,7 +258,6 @@ trait GraphAPI extends HttpService with ActorLogging {
       get {
         parameter("id") { id =>
           if(friendlistMap.contains(id)) {
-           println(friendlistMap(id)) 
            complete(friendlistMap(id)) 
           } else {
             println("FriendList not found for id " + id)
@@ -274,7 +271,6 @@ trait GraphAPI extends HttpService with ActorLogging {
         parameter("id") { id =>
           println("PAGE: GET request received for id " + id)
           if(pageMap.contains(id)) {
-            println(pageMap(id))
             complete {pageMap(id)}
           } else {
             println("The requested page was not found")
@@ -365,7 +361,6 @@ trait GraphAPI extends HttpService with ActorLogging {
         parameter("id") { id =>
           println("GET request received for id " + id)
           if(photoMap.contains(id)) {
-            println(photoMap(id))
             complete {photoMap(id)}
           } else {
             // Error description in photo.name
@@ -455,7 +450,6 @@ trait GraphAPI extends HttpService with ActorLogging {
           parameter("id") { id =>
             println("STATUS: GET request received for id " + id)
             if(statusMap.contains(id)) {
-              println(statusMap(id))
               complete {statusMap(id)}
             } else {
               println("The requested Status was not found")
@@ -577,7 +571,6 @@ trait GraphAPI extends HttpService with ActorLogging {
           parameter("id") { id =>
             println("PROFILE: GET request received for id " + id)
             if(profileMap.contains(id)) {
-              println(profileMap(id))
               complete {profileMap(id)}
             } else {
               // Error in profile.bio
@@ -684,4 +677,3 @@ trait GraphAPI extends HttpService with ActorLogging {
       } 
     }
 }
-
