@@ -61,9 +61,7 @@ trait GraphAPI extends HttpService with ActorLogging {
       path("") {
         get {
           log.info("Building get route")
-          complete {
-            "Welcome"
-          }
+          complete { "Welcome" }
         }
       } ~
     pathPrefix("Album") {
@@ -71,17 +69,21 @@ trait GraphAPI extends HttpService with ActorLogging {
         get {
           parameter("id") { id =>
             println("ALBUM: GET request received for id " + id)
-            if(albumMap.contains(id))
+            if(albumMap.contains(id)){
+              println(albumMap(id))
               complete {albumMap(id)}
-            else 
+            } else{
               // Error description in album.description
-            complete(Album("-1", "-1", 0, "", "", "The requested album cannot be found.", "", "", "", "", "", "", "", Array(""), "-1"))
+              println("The requested album cannot be found.")
+              complete(Album("-1", "-1", 0, "", "", "The requested album cannot be found.", "", "", "", "", "", "", "", Array(""), "-1"))
+            }
           }
         } ~
         post {
           entity(as[Album]) { album =>
             if (album.id == "null") {
               if(album.auth != album.from) {
+                println("You are not allowed to create this album")
                 complete("You are not allowed to create this album")
               } else {
                 numalbums +=1
@@ -107,14 +109,17 @@ trait GraphAPI extends HttpService with ActorLogging {
                 // Update an existing album
                 if(albumMap.contains(album.id)) {
                   if(albumMap(album.id).from != album.auth) {
+                    println("You are not allowed to create this album")
                     complete("You are not allowed to create this album")
                   } else { 
                     var A = album
                     A.OCid = albumMap(album.id).OCid
                     albumMap(album.id) = A
-                    complete("Album updated!")
+                    println("Album" + album.id + " updated!")
+                    complete("Album" + album.id + " updated!")
                   }
                   } else {
+                    println("The requested album does not exist!")
                     complete("The requested album does not exist!")
                   }
               }
@@ -159,9 +164,11 @@ trait GraphAPI extends HttpService with ActorLogging {
 
               albumMap.remove(del_id)
 
+              println("Album with id = " + del_id + " was deleted!")
               complete("Album with id = " + del_id + " was deleted!")
             }
             else 
+              println("Album with id = " + del_id + " was not found")
               complete("Album with id = " + del_id + " was not found")
           }
         } 		
@@ -188,13 +195,17 @@ trait GraphAPI extends HttpService with ActorLogging {
                 println("-> Comment created for Object " + newComment.object_id + " with ID = " + newComment.id)
                 complete("Comment created!")
               }
-              else
+              else {
+                println("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
                 complete("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
+              }
               } else {// Update an existing comment
                 if(commentMap.contains(comment.id) && objectCommentsMap.contains(comment.object_id)) {
                   commentMap(comment.id) = comment
+                  println("Comment with id = " + comment.id + " updated!")
                   complete("Comment with id = " + comment.id + " updated!")
                 } else {
+                  println("Comment with id = " + comment.id + " DOES NOT EXIST!")
                   complete("Comment with id = " + comment.id + " DOES NOT EXIST!")
                 }
               }
@@ -216,13 +227,18 @@ trait GraphAPI extends HttpService with ActorLogging {
                 objectCommentsMap(comment.object_id) = currObj
 
                 commentMap.remove(del_id)
+                println("Comment with id = " + del_id + " was deleted!")
                 complete("Comment with id = " + del_id + " was deleted!")
               }
-              else
+              else {
+                println("Comment with id = " + del_id + " was not found")
                 complete("Comment with id = " + del_id + " was not found")
+              }
             }
-            else
+            else {
+              println("COMMENT: Parent Object with id = " + del_id + " DOES NOT EXIST!")
               complete("COMMENT: Parent Object with id = " + del_id + " DOES NOT EXIST!")
+            }
           }
         }
       }        
@@ -230,10 +246,13 @@ trait GraphAPI extends HttpService with ActorLogging {
     pathPrefix("Comment") {
       get {
         parameter("id") { id =>
-          if (objectCommentsMap.contains(id))
+          if (objectCommentsMap.contains(id)) {
+            println(objectCommentsMap(id))
             complete(objectCommentsMap(id))
-          else
+          } else {
+            println("Not found")
             complete("Not found")
+          }
         }
       }
     } ~
@@ -241,8 +260,10 @@ trait GraphAPI extends HttpService with ActorLogging {
       get {
         parameter("id") { id =>
           if(friendlistMap.contains(id)) {
+           println(friendlistMap(id)) 
            complete(friendlistMap(id)) 
           } else {
+            println("FriendList not found for id " + id)
             complete("FriendList not found for id " + id)
           }
         }
@@ -252,10 +273,13 @@ trait GraphAPI extends HttpService with ActorLogging {
       get {
         parameter("id") { id =>
           println("PAGE: GET request received for id " + id)
-          if(pageMap.contains(id))
+          if(pageMap.contains(id)) {
+            println(pageMap(id))
             complete {pageMap(id)}
-          else 
+          } else {
+            println("The requested page was not found")
             complete("The requested page was not found")
+          }
         }
       } ~
       post {
@@ -263,6 +287,7 @@ trait GraphAPI extends HttpService with ActorLogging {
 
           if (page.id == "null") {
             if(page.auth != page.from) {
+              println("You are not allowed to create this page")
               complete("You are not allowed to create this page")
             } else {
               numPages += 1
@@ -293,14 +318,17 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Update an exising page
             if(pageMap.contains(page.id)) {
               if(pageMap(page.id).from != page.auth) {
+                println("You are not allowed to edit this page")
                 complete("You are not allowed to edit this page")
               } else {
                 var P = page
                 P.OCid = pageMap(page.id).OCid
                 pageMap(page.id) = P
+                println("Page" + page.id + " updated!")
                 complete("Page updated!")
               }
               } else {
+                println("The requested page does not exist!")
                 complete("The requested page does not exist!")
               }
           }
@@ -322,10 +350,13 @@ trait GraphAPI extends HttpService with ActorLogging {
               objectCommentsMap.remove(OCid)
             }
             pageMap.remove(del_id)
+            println("Page with id = " + del_id + " was deleted!")
             complete("Page with id = " + del_id + " was deleted!")
           }
-          else 
+          else {
+            println("Page with id = " + del_id + " was not found")
             complete("Page with id = " + del_id + " was not found")
+          }
         }
       }
     } ~
@@ -333,12 +364,15 @@ trait GraphAPI extends HttpService with ActorLogging {
       get {
         parameter("id") { id =>
           println("GET request received for id " + id)
-          if(photoMap.contains(id))
+          if(photoMap.contains(id)) {
+            println(photoMap(id))
             complete {photoMap(id)}
-          else 
+          } else {
             // Error description in photo.name
+          println("The requested photo cannot be found.")
           complete(Photo("-1","-1", "", "", "", Array(-1), "",
             "The requested photo cannot be found.", "", "", Array(""), Array(""), ""))
+          }
         }
       }~
       post {
@@ -347,10 +381,12 @@ trait GraphAPI extends HttpService with ActorLogging {
 
           if(photo.id == "null") {
             if(photo.auth != photo.from) {
+              println("You are not allowed to post this picture")
               complete("You are not allowed to post this picture")
             } else {
               if(albumMap.contains(photo.album)) {
                 if(albumMap(photo.album).from != photo.auth) {
+                  println("You are not allowed to post to this album")
                   complete("You are not allowed to post to this album")
                 } else {
 
@@ -383,6 +419,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                 }
             }
             } else {
+              println("The requested photo was not found")
               complete("The requested photo was not found")
             }
         }
@@ -403,8 +440,10 @@ trait GraphAPI extends HttpService with ActorLogging {
               objectCommentsMap.remove(OCid)
             }
             photoMap.remove(del_id)
+            println("Photo with id = " + del_id + " was deleted!")
             complete("Photo with id = " + del_id + " was deleted!")
           } else {
+            println("Profile with id = " + del_id + " was not found")
             complete("Profile with id = " + del_id + " was not found")
           }
         }
@@ -415,16 +454,20 @@ trait GraphAPI extends HttpService with ActorLogging {
         get {
           parameter("id") { id =>
             println("STATUS: GET request received for id " + id)
-            if(statusMap.contains(id))
+            if(statusMap.contains(id)) {
+              println(statusMap(id))
               complete {statusMap(id)}
-            else 
+            } else {
+              println("The requested Status was not found")
               complete("The requested Status was not found")
+            }
           }
         }~
         post {
           entity(as[Status]) { status =>
             if(status.id == "null") {
               if(status.auth != status.from) {
+                println("You are not allowed to post this status")
                 complete("You are not allowed to post this status")
               } else {
                 numstatus += 1
@@ -448,14 +491,17 @@ trait GraphAPI extends HttpService with ActorLogging {
                 //Update a status
                 if(statusMap.contains(status.id)) {
                   if(statusMap(status.id).from != status.auth) {
+                    println("You are not allowed to update this status")
                     complete("You are not allowed to update this status")
                   } else {
                     var S = status
                     S.OCid = statusMap(status.id).OCid
                     statusMap(status.id) = S
+                    println("Status Posted")
                     complete("Status Posted")
                   }
                   } else {
+                    println("The requested status was not found.")
                     complete("The requested status was not found.")
                   }
               }
@@ -478,8 +524,10 @@ trait GraphAPI extends HttpService with ActorLogging {
                 } 
               }
               statusMap.remove(del_id)
+              println("Status " + del_id + " deleted")
               complete("Status " + del_id + " deleted")
             } else {
+              println("Requested status not found")
               complete("Requested status not found")
             }
           }
@@ -505,13 +553,16 @@ trait GraphAPI extends HttpService with ActorLogging {
                 println("-> Comment created for Object " + newComment.object_id + " with ID = " + newComment.id)
                 complete("Comment created!")
               } else { 
+                println("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
                 complete("COMMENT: Parent Object with id = " + comment.object_id + " DOES NOT EXIST!")
               }
               } else {
                 if(commentMap.contains(comment.id) && objectCommentsMap.contains(comment.object_id)) {
                   commentMap(comment.id) = comment
+                  println("Comment with id = " + comment.id + " updated!")
                   complete("Comment with id = " + comment.id + " updated!")
                 } else {
+                  println("Comment with id = " + comment.id + " DOES NOT EXIST!")
                   complete("Comment with id = " + comment.id + " DOES NOT EXIST!")
                 }
 
@@ -525,17 +576,19 @@ trait GraphAPI extends HttpService with ActorLogging {
         get {
           parameter("id") { id =>
             println("PROFILE: GET request received for id " + id)
-            if(profileMap.contains(id))
+            if(profileMap.contains(id)) {
+              println(profileMap(id))
               complete {profileMap(id)}
-            else
+            } else {
               // Error in profile.bio
-            complete(Profile( 
+              println("The requested profile was not found")
+              complete(Profile( 
               "-1", 
               "-1", 
               "The requested profile was not found", 
               "", "", "", "", "", Array(""), Array(""), "", "", "", "", 
               "", "", "", "", "", "", Array(""), ""))
-            //complete("The requested profile was not found")
+            }
           }
         } ~
         post {
@@ -544,9 +597,11 @@ trait GraphAPI extends HttpService with ActorLogging {
             // Existing user
             if(profileMap.contains(profile.id)) {
               if(profileMap(profile.id).auth != profile.auth) {
+                println("You are not allowed to update this profile")
                 complete("You are not allowed to update this profile")
               } else {
                 profileMap(profile.id) = profile
+                println("Profile with id " + profile.id + " updated!")
                 complete("Profile with id " + profile.id + " updated!")
               }
             }
@@ -571,10 +626,12 @@ trait GraphAPI extends HttpService with ActorLogging {
             println("USER: DELETE request received for id = " + del_id)
             if(profileMap.contains(del_id)) {
               profileMap.remove(del_id)
+              println("Profile with id = " + del_id + " was deleted!")
               complete("Profile with id = " + del_id + " was deleted!")
-            }
-            else 
+            } else {
+              println("Profile with id = " + del_id + " was not found")
               complete("Profile with id = " + del_id + " was not found")
+            }
           }
         }
       }
@@ -584,6 +641,7 @@ trait GraphAPI extends HttpService with ActorLogging {
         entity(as[FriendReqest]) { fr =>
           //Add from
           if(fr.fromid != fr.auth && fr.toid != fr.auth) {
+            println("You are not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
             complete("You are not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
           } else {
             if(profileMap.contains(fr.toid) && profileMap.contains(fr.fromid)) {
