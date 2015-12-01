@@ -143,6 +143,14 @@ object Main extends App {
         //5% of users update their statuses 
         if (i%20 == 0) 
           fbUsers(i) ! DeleteStatus("1")
+        //5% of users create pages
+        if (i%20 == 0) 
+          fbUsers(i) ! CreatePage()
+        //All users see pages
+          fbUsers(i) ! CreatePage()
+        //1% of users delete pages
+        if (i%100 == 0) 
+          fbUsers(i) ! DeletePage((i%100).toString)
       }
   }
 
