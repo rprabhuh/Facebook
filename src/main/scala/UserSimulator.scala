@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 
 case class Start()
 case class CreateAlbum()
-case class UpdateAlbum()
+case class UpdateAlbum(id: String)
 case class GetAlbum(id: String)
 case class DeleteAlbum(id: String)
 case class UploadPhoto(id: String, album_id: String)
@@ -41,6 +41,11 @@ case class GetProfile(id: String)
 case class UpdateProfile()
 case class DeleteProfile(id: String)
 case class CreateComment(objId: String)
+case class UpdateComment(id: String, objId: String)
+case class DeleteComment(id: String)
+case class CreateStatus()
+case class UpdateStatus(id: String)
+case class DeleteStatus(id: String)
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
 
@@ -119,24 +124,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }*/
 
 
-      case UpdateAlbum =>
+      case UpdateAlbum(id) =>
         println("Updating an Album.."	)
 
         import FBJsonProtocol._
 
-        var A = new Album("null",
-            0,
-            "33",
-            "12:23:12",
-            "description: String",
-            self.path.name,
-            "link: String",
-            "location: String",
-            "name: String",
-            "place: String",
-            "privacy: String",
-            "null",                           // updated_time
-            Array("cover_photo"), "1")
+        var A = new Album(id, 12, "cover_photo", "time", "description: String",
+          self.path.name, "link: String", "location: String", "name: String", "place: String",
+          "privacy: String", "null", Array("cover_photo"), "1" )
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         //println("RESPONSE: " + response)
@@ -208,9 +203,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
         
 
-      case DeletePhoto(id) => 
-		println("User " + self.path.name + " deleting photo " + id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo", id))
+    case DeletePhoto(id) => 
+		  println("User " + self.path.name + " deleting photo " + id)
+		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo?del_id=", id))
 
 
       case AddFriend(id) =>
@@ -292,6 +287,39 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			Array("user_likes"))
 		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))	
 
+  case UpdateComment(id, objId) =>
+  import FBJsonProtocol._
+    println("User " + self.path.name + " updating comment " + id + 
+              " on Object " + objId)
+    var C = new Comment(id, objId, "created_time", "from",
+      "This is the UPDATED comment message!", "parent", Array("user_comments"),
+      Array("user_likes"))
+    val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))  
+
+  case DeleteComment(id) => 
+      println("User " + self.path.name + " deleting comment " + id)
+      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment?del_id=", id))
+
+
+  case CreateStatus =>
+    val status = "This is User " + self.path.name + "'s status"
+    println("User " + self.path.name + " creating status " + "\"" + status + "\"")
+    import FBJsonProtocol._
+    var S = new Status("null", "now", self.path.name, "location", status,
+                  "time again", "-1")
+    val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))  
+
+  case UpdateStatus(id) =>
+    val status = "User " + self.path.name + " is changing his status"
+    println("User " + self.path.name + " is changing his status to " + "\"" + status + "\"")
+    import FBJsonProtocol._
+    var S = new Status(id, "now", self.path.name, "location", status,
+                  "time again", "-1")
+    val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))
+
+  case DeleteStatus(id) => 
+      println("User " + self.path.name + " deleting status " + id)
+      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status?del_id=", id))
 
   }
 }
