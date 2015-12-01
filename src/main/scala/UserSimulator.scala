@@ -46,49 +46,35 @@ case class DeleteComment(id: String)
 case class CreateStatus()
 case class UpdateStatus(id: String)
 case class DeleteStatus(id: String)
+case class CreatePage()
+case class GetPage(id: String)
+case class UpdatePage(id: String)
+case class DeletePage(id: String)
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   val system = systemArg
   import system.dispatcher
-  implicit val timeout = Timeout(1000000)
+  implicit val timeout = Timeout(10000)
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
 
-
-  //val pipeline2: HttpRequest => Future[HttpResponse] = sendReceive
-
   def receive = { 
-    case Start =>
     case CreateAlbum =>
         println("User " + self.path.name + " creating an Album..")
 
         import FBJsonProtocol._
 
-        val A = new Album(
-            self.path.name,
-            "null",
-            0,
-            "33",
-            "12:23:12",
-            "description: String",
-            self.path.name,
-            "link: String",
-            "location: String",
-            "name: String",
-            "place: String",
-            "privacy: String",
-            "null",                           // updated_time
-            Array("cover_photo"), "-1")
+        val A = new Album(self.path.name, "null", 0, "33", "12:23:12", "description: String",
+                          self.path.name, "link: String", "location: String", "name: String",
+                          "place: String", "privacy: String", "null", Array("cover_photo"),"-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
-        //println("RESPONSE: " + response)
 
 
       case GetAlbum(id) =>
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting an Album with id = " + id)
-        //val response: Future[HttpResponse] = pipeline(Get("http://localhost:8080/Album?id=" + id))
-        //val pipeline:HttpRequest => Future[Album] = sendReceive ~> unmarshal[Album]
+
         val pipeline: HttpRequest => Future[Album] = (
           sendReceive
             ~> unmarshal[Album]
@@ -153,19 +139,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val list = Array("a","b","c")
         
         import FBJsonProtocol._
-        var A = new Photo(
-          self.path.name,
-          "null",
-          album_id,
-          "created_time",
-          self.path.name,
-          bytearray,
-          "link",
-          id,
-          "updated_time",
-          "place", 
-          list,
-          list, "-1")
+        var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, bytearray,
+                          "link", id, "updated_time", "place", list, list, "-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         //println("RESPONSE: " + response)
@@ -184,22 +159,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         	println(P.name)
         else {
         	println("id = " + P.id + "\n" +
-			"album = " + P.album + "\n" +
-			"created_time = " + P.created_time + "\n" +
-			"from = " + P.from + "\n" +
-			"link = " + P.link + "\n" +
-			"name = " + P.name + "\n" +
-			"updated_time = " + P.updated_time + "\n" +
-			"place = " + P.place + "\n" +
-			"OCid = " + P.OCid)
-        
-/*        	print("user_comments = ")
-        	for (i <- 0 until P.user_comments.size)
-        		print(P.user_comments(i) + "\t")
-
-        	print("user_likes = ")
-        	for (i <- 0 until P.user_likes.size)
-        		print(P.user_likes(i) + "\t")*/
+			            "album = " + P.album + "\n" +
+			            "created_time = " + P.created_time + "\n" +
+			            "from = " + P.from + "\n" +
+			            "link = " + P.link + "\n" +
+			            "name = " + P.name + "\n" +
+			            "updated_time = " + P.updated_time + "\n" +
+			            "place = " + P.place + "\n" +
+			            "OCid = " + P.OCid)
 
         	println("\n")
         }
@@ -324,6 +291,71 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   case DeleteStatus(id) => 
       println("User " + self.path.name + " deleting status " + id)
       val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status?del_id=" + id))
+
+
+  case CreatePage =>
+        println("User " + self.path.name + " creating an Page..")
+
+        import FBJsonProtocol._
+
+        var P = new Page(self.path.name, "null", "about", true, "cover", "description", Array("emails"),
+                false, false, true, 12, "link", "location", "from", "name", "parent_page", Array("posts"),
+                "phone", "last_used_time", Array("likes"), Array("members"), "-1")
+
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
+
+
+  case GetPage(id) =>
+        import FBJsonProtocol._
+        println("User " + self.path.name + " getting a Page with id = " + id)
+
+        val pipeline: HttpRequest => Future[Page] = (
+          sendReceive
+            ~> unmarshal[Page]
+          )
+        val response: Future[Page] = pipeline(Get("http://localhost:8080/Page?id=" + id))
+        var P: Page = Await.result(response, timeout.duration).asInstanceOf[Page]
+        if (P.id == "-1")
+          println("ERROR: " + P.description)
+        else {
+          println("auth = " + P.auth + "\n" +
+                  "id = " + P.id + "\n" +
+                  "about = " + P.about + "\n" +
+                  "can_post = " + P.can_post + "\n" +
+                  "cover = " + P.cover + "\n" +
+                  "description = " + P.description + "\n" +
+                  "is_community_page = " + P.is_community_page + "\n" +
+                  "is_permanently_closed = " + P.is_permanently_closed + "\n" +
+                  "is_published = " + P.is_published + "\n" +
+                  "like_count = " + P.like_count + "\n" +
+                  "link = " + P.link + "\n" +
+                  "location = " + P.location + "\n" +
+                  "from = " + P.from + "\n" +
+                  "name = " + P.name + "\n" +
+                  "parent_page = " + P.parent_page + "\n" +
+                  "phone = " + P.phone + "\n" +
+                  "last_used_time = " + P.last_used_time + "\n" +
+                  "OCid = " + P.OCid + "\n")
+
+          println("\n")
+        }
+
+
+    case UpdatePage(id) =>
+        println("User " + self.path.name + " Updating an Page with id = " + id)
+
+        import FBJsonProtocol._
+
+        val P = new Page(self.path.name, id, "about", true, "cover", "description", Array("emails"),
+                false, false, true, 12, "link", "location", "from", "name", "parent_page", Array("posts"),
+                "phone", "last_used_time", Array("likes"), Array("members"), "-1")
+
+        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
+
+    case DeletePage(id) =>
+        println("User " + self.path.name + " deleting Page " + id)
+        val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Page?del_id=" + id))
+
 
   }
 }
