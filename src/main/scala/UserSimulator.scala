@@ -96,7 +96,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[Album] = pipeline(Get("http://localhost:8080/Album?id=" + id))
         var A: Album = Await.result(response, timeout.duration).asInstanceOf[Album]
         if (A.id == "-1")
-          println("ERROR: " + A.description)
+          println(A.description)
         else {
           println("id = " + A.id + "\n" +
             "count = " + A.count + "\n" +
@@ -181,7 +181,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[Photo] = pipeline(Get("http://localhost:8080/Photo?id=" + id))
         val P: Photo = Await.result(response, timeout.duration).asInstanceOf[Photo]
         if (P.id == "-1")
-        	println("ERROR: " + P.name)
+        	println(P.name)
         else {
         	println("id = " + P.id + "\n" +
 			"album = " + P.album + "\n" +
@@ -241,7 +241,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[Profile] = pipeline(Get("http://localhost:8080/Profile?id=" + id))
         val P: Profile = Await.result(response, timeout.duration).asInstanceOf[Profile]
         if (P.id == "-1")
-        	println("ERROR: " + P.bio)
+        	println(P.bio)
         else {
         	println("id = " + P.id + "\n" +
 				"bio = " + P.bio + "\n" +
