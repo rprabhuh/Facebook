@@ -1,5 +1,6 @@
 // ALBUM
 {
+    "auth"    :               "from: String",
     "id"  :   "1",
     "count"   :               0,
     "cover_photo" :               "33",
@@ -18,6 +19,7 @@
 
 // PAGE
 {
+    "auth": "1083346431",
     "id": "null",
     "about": "about == String",
     "can_post": true,
@@ -37,11 +39,13 @@
     "phone": "phone == String",
     "last_used_time": "last_used_time == String",
     "likes": ["1083346431"],
-    "members": ["1083346431", "984762113"]
+    "members": ["1083346431", "984762113"],
+    "OCid": "-1"
 }
 
 // PROFILE
 {
+    "auth": "1083346431",
     "id": "1",
     "bio": "String",
     "birthday": "String",
@@ -68,6 +72,7 @@
 
 //FriendRequest
 {
+"auth" : "1",
 "fromid" : "1",
 "toid"	: "2"
 }
@@ -78,7 +83,7 @@
     "album": "String",
     "created_time": "String",
     "from": "String",
-    "image": ["ArrayByte"],
+    "image": [12],
     "link": "String",
     "name": "String",
     "updated_time": "String",
@@ -103,6 +108,7 @@
 
 //STATUS
 {
+    "auth": "String",
     "id": "null",
     "created_time": "String",
     "from": "String",
