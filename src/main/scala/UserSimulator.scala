@@ -60,7 +60,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   def receive = { 
     case Start =>
     case CreateAlbum =>
-        println("Creating an Album..")
+        println("User " + self.path.name + " creating an Album..")
 
         import FBJsonProtocol._
 
@@ -86,7 +86,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
       case GetAlbum(id) =>
         import FBJsonProtocol._
-        println("Getting an Album..")
+        println("User " + self.path.name + " Getting an Album with id = " + id)
         //val response: Future[HttpResponse] = pipeline(Get("http://localhost:8080/Album?id=" + id))
         //val pipeline:HttpRequest => Future[Album] = sendReceive ~> unmarshal[Album]
         val pipeline: HttpRequest => Future[Album] = (
@@ -119,15 +119,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           println("\n")
         }
 
-/*        response.onComplete {
-          case Success(_) =>
-          case Failure(_) =>
-          case StatusCodes.NotFound => println("Default")
-        }*/
 
-
-      case UpdateAlbum(id) =>
-        println("Updating an Album.."	)
+    case UpdateAlbum(id) =>
+        println("User " + self.path.name + " Updating an Album with id = " + id)
 
         import FBJsonProtocol._
 
@@ -138,13 +132,17 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         //println("RESPONSE: " + response)
 
-      case DeleteAlbum(id) =>
-		println("User " + self.path.name + " deleting Album " + id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
+    case DeleteAlbum(id) =>
+    		println("User " + self.path.name + " deleting Album " + id)
+		    val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
 
 
 
       case UploadPhoto(id, album_id) =>
+
+        println("User " + self.path.name + " uploading photo with " + id + 
+            " to album " + album_id)
+
         var image = ImageIO.read(new File("media/" + id))
         var bytearraystream = new ByteArrayOutputStream()
         ImageIO.write(image, "png", bytearraystream)
@@ -156,11 +154,11 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         
         import FBJsonProtocol._
         var A = new Photo(
-          "from",
+          self.path.name,
           "null",
           album_id,
           "created_time",
-          "from",
+          self.path.name,
           bytearray,
           "link",
           id,
@@ -174,7 +172,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
      case GetPhoto(id) =>
         import FBJsonProtocol._
-        println("Getting a Photo..")
+        println("User " + self.path.name + " Getting a Photo with id = " + id)
 
         val pipeline: HttpRequest => Future[Photo] = (
           sendReceive
@@ -209,10 +207,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
     case DeletePhoto(id) => 
 		  println("User " + self.path.name + " deleting photo " + id)
-		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo?del_id=", id))
+		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo?del_id=" + id))
 
 
       case AddFriend(id) =>
+        println("User " + self.path.name + " sending friend request to " + id)
+
         import FBJsonProtocol._
         var A = new FriendReqest(self.path.name, self.path.name, id)
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
@@ -232,7 +232,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 	case GetProfile(id) =>
         import FBJsonProtocol._
-        println("Getting a Profile..")
+        println("User " + self.path.name + " Getting Profile = " + id)
 
         val pipeline: HttpRequest => Future[Profile] = (
           sendReceive
@@ -281,12 +281,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 	case DeleteProfile =>
 		println("User " + self.path.name + " deleting Profile")
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile", self.path.name))
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile?del_id=" + self.path.name))
 
 	case CreateComment(objId) =>
 	import FBJsonProtocol._
 		println("User " + self.path.name + " commenting on Object " + objId)
-		var C = new Comment("null", "object_id", "created_time", "from",
+		var C = new Comment("null", "object_id", "created_time", self.path.name,
 			"This is the comment message!", "parent", Array("user_comments"),
 			Array("user_likes"))
 		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))	
@@ -295,14 +295,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   import FBJsonProtocol._
     println("User " + self.path.name + " updating comment " + id + 
               " on Object " + objId)
-    var C = new Comment(id, objId, "created_time", "from",
+    var C = new Comment(id, objId, "created_time", self.path.name,
       "This is the UPDATED comment message!", "parent", Array("user_comments"),
       Array("user_likes"))
     val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))  
 
   case DeleteComment(id) => 
       println("User " + self.path.name + " deleting comment " + id)
-      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment?del_id=", id))
+      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment?del_id=" + id))
 
 
   case CreateStatus =>
@@ -323,7 +323,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   case DeleteStatus(id) => 
       println("User " + self.path.name + " deleting status " + id)
-      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status?del_id=", id))
+      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status?del_id=" + id))
 
   }
 }
