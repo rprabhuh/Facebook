@@ -5,6 +5,13 @@ import spray.can.Http
 import akka.util.Timeout
 
 object Main extends App {
+override def main(args: Array[String]) {
+  /*if(args.length != 1 || isAllDigits(args(0)) == false) {
+    println("Error: Enter the network size");
+    System.exit(1)
+  }*/
+
+//  var NETWORK_SIZE = args(0).toInt
 
   implicit val system = ActorSystem("facebook")
 
@@ -30,6 +37,10 @@ object Main extends App {
         system.shutdown()
     }
 
+    println("Server starting up..")
+    Thread sleep(5000)
+    println("Server up!")
+
   // Create actors for simulation
   var i = 0
   
@@ -42,18 +53,21 @@ object Main extends App {
   	var photos: HashMap[String, ArrayBuffer[String]] = HashMap()
   }
 
-  var network_size = 20
+  var NETWORK_SIZE = 10
 
-  var fbUsers: Array[ActorRef] = new Array[ActorRef](network_size)
-  var users: Array[UserData] = new Array[UserData](network_size)
-  for (i <- 0 until network_size) {
+  var fbUsers: Array[ActorRef] = new Array[ActorRef](NETWORK_SIZE)
+  var users: Array[UserData] = new Array[UserData](NETWORK_SIZE)
+  for (i <- 0 until NETWORK_SIZE) {
     fbUsers(i) = system.actorOf(Props(new UserSimulator(system)), name = i.toString)
     fbUsers(i) ? CreateProfile
   	users(i) = new UserData(i.toString)
   }
 
+  println("\nProfiles created!")
+
+
   var numAlbumsCreated = 0
-  for (i <- 0 until network_size) {
+  for (i <- 0 until NETWORK_SIZE) {
      if (i%10 == 0)  { 
      	fbUsers(i) ? CreateAlbum
      	numAlbumsCreated += 1
@@ -61,7 +75,7 @@ object Main extends App {
      }
   }
   
-  def UpdatePhotos(userid: String, photo: String, album: String) = {
+/*  def UpdatePhotos(userid: String, photo: String, album: String) = {
   	if (users(i).photos.contains(album)) {
   		var P = users(i).photos(album)
   		P.append(photo)
@@ -70,13 +84,19 @@ object Main extends App {
   	else {
 
   	}
-  }
+  }*/
+
+
 
   import scala.util.Random
   import scala.math.abs
   var R = new Random()
   var tmp: Int = 0
-  for(i <- 0 until network_size) {
+  for(i <- 0 until NETWORK_SIZE) {
+
+    if (i%10 == 0)
+      fbUsers(i) ! CreateStatus
+
     if (numAlbumsCreated > 1)
       tmp = abs(R.nextInt()%numAlbumsCreated)
       if (tmp == 0) tmp = 1
@@ -85,35 +105,50 @@ object Main extends App {
 
     if (i%20 == 0) {
       fbUsers(i) ? UploadPhoto("1.png", tmp.toString)
-	  	UpdatePhotos(i.toString, "1", tmp.toString)
+	  	//UpdatePhotos(i.toString, "1", tmp.toString)
 	  }
 	  
 	  if (i%30 == 0) {
 	  	fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
-	  	UpdatePhotos(i.toString, "2", tmp.toString)
+	  	//UpdatePhotos(i.toString, "2", tmp.toString)
 	  } 
 	  
 	  if (i%50 == 0) {
 	  	fbUsers(i) ? UploadPhoto("3.png", tmp.toString)
-	  	UpdatePhotos(i.toString, "3", tmp.toString)
+	  	//UpdatePhotos(i.toString, "3", tmp.toString)
 	  } 
 	  
-	  if (i%20 == 0) {
-	  	fbUsers(i) ? AddFriend(i.toString)
+	  if (i !=0 && i%20 == 0) {
+	  	fbUsers(i) ? AddFriend((i-10).toString)
 	  }
 
-    if (i%20 == 0) fbUsers(i) ? CreateComment("1")
+    if (i%20 == 0) fbUsers(i) ? CreateComment(tmp.toString)
+    if (i%60 == 0) fbUsers(i) ! UpdateComment("1", tmp.toString)
+    if (i%90 == 0) fbUsers(i) ! DeleteComment("2")
+    if (i%90 == 0) fbUsers(i) ! DeleteComment(tmp.toString)
   }
 
   Thread sleep(100)
 
-  fbUsers(1) ! GetAlbum("1")
-  fbUsers(4) ! GetAlbum("189")
+  fbUsers(0) ! GetAlbum("189783748374389")
+  if (i%50 == 0) fbUsers(i) ! GetAlbum(tmp.toString)
 
-  fbUsers(1) ! GetPhoto("1")
-  fbUsers(1) ! GetPhoto("123")
+  fbUsers(5) ! GetPhoto("12379872834")
+  if (i%25 == 0) fbUsers(i) ! GetPhoto("1")
 
-  fbUsers(1) ! GetProfile("10")
-  fbUsers(1) ! GetProfile("1023")
+  fbUsers(0) ! GetProfile("1023789748")
+  if (i%10 == 0) fbUsers(i) ! GetProfile(i.toString)
+  if (i != 0 && i%15 == 0) fbUsers(i) ! GetProfile((i-10).toString)
+  if (i%40 ==0) fbUsers(i) ! UpdateProfile
+  if (i%80 ==0) fbUsers(i) ! DeleteProfile
 
+  if (i%20 == 0) fbUsers(i) ! UpdateStatus
+  
+  fbUsers(0) ! DeleteStatus("1333987492")
+  if (i%60 == 0) fbUsers(i) ! DeleteStatus("1")
+
+}
+
+
+  def isAllDigits(x: String) = x forall Character.isDigit
 }
