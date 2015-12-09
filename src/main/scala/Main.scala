@@ -7,13 +7,13 @@ import akka.util.Timeout
 object Main extends App {
   override def main(args: Array[String]) { 
 
-    //Take in the command line for the number of users.
+    /*//Take in the command line for the number of users.
     if(args.length != 1 || isAllDigits(args(0)) == false) {
       println("Error: Enter the network size");
       System.exit(1)
-    }
+    }*/
 
-    var NETWORK_SIZE = args(0).toInt
+    var NETWORK_SIZE = 100 //args(0).toInt
 
     implicit val system = ActorSystem("facebook")
 
@@ -74,6 +74,12 @@ object Main extends App {
       var R = new Random()
       var tmp: Int = 0
       for(i <- 0 until NETWORK_SIZE) {
+
+      	/*import system.dispatcher
+      	//This will schedule to send <message>
+		//to the <actor> after 0ms repeating every 50ms
+      	val cancellable = system.scheduler.schedule(0 milliseconds,
+      		50 milliseconds, <actor>, <message>)*/
 
      //   if (i%10 == 0)
      //   Everyone Updates their statuses

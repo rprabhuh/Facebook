@@ -156,8 +156,6 @@ case class FriendReqest(
   toid: String
 )
 
-case class ErrorClass(id: String, error: String)
-
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
     implicit val albumFormat = jsonFormat15(Album)
@@ -170,6 +168,4 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val commentFormat = jsonFormat8(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat3(FriendReqest.apply)
     implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
-    implicit val errorFormat = jsonFormat2(ErrorClass.apply)
-
 }
