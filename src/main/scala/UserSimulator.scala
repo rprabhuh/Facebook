@@ -65,18 +65,17 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 
   // ENCRYPT using the PRIVATE key
-  def encrypt(plaintext: String): String = {
+  def encrypt(plaintext: Array[Byte]): String = {
 	    cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
-	    val encryptedBytes = cipher.doFinal(plaintext.getBytes())
+	    val encryptedBytes = cipher.doFinal(plaintext)
 	    return new String(Base64.getEncoder().encode(encryptedBytes))
   }  
 
   // DECRYPT using the PUBLIC key
-  def decrypt(chipertext: String): String = {
-        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPublic())
+  def decrypt(chipertext: String, publicKey: PublicKey): Array[Byte] = {
+        cipher.init(Cipher.DECRYPT_MODE, publicKey)
         var ciphertextBytes = Base64.getDecoder().decode(chipertext.getBytes())
-        var decryptedBytes = cipher.doFinal(ciphertextBytes)
-        return new String(decryptedBytes)
+        return cipher.doFinal(ciphertextBytes)
   }
 
 
