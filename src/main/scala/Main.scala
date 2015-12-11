@@ -7,13 +7,13 @@ import akka.util.Timeout
 object Main extends App {
   override def main(args: Array[String]) { 
 
-    /*//Take in the command line for the number of users.
-    if(args.length != 1 || isAllDigits(args(0)) == false) {
+    //Take in the command line for the number of users.
+    /*if(args.length != 1 || isAllDigits(args(0)) == false) {
       println("Error: Enter the network size");
       System.exit(1)
     }*/
 
-    var NETWORK_SIZE = 100 //args(0).toInt
+    var NETWORK_SIZE = 5 //args(0).toInt
 
     implicit val system = ActorSystem("facebook")
 
@@ -121,7 +121,7 @@ object Main extends App {
         if (i%50 == 0) 
           fbUsers(i) ! GetAlbum(tmp.toString) 
         //2% of users see other's photos that do not exist
-        if (i%50 == 0) 
+        if (i%3 == 0) 
           fbUsers(i) ! GetPhoto("12379872834")
         //20% of users see other's photos
         if (i%5 == 0) 

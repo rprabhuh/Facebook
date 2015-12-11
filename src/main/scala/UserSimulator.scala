@@ -1,33 +1,53 @@
 import scala.util.{Try, Success, Failure}
-import spray.http.StatusCodes
 import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.util.Timeout
-import akka.actor._
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Random
+import scala.math
+import BigInt._
+
+
 import spray.can.Http
 import spray.can.server.Stats
 import spray.util._
 import spray.http._
-import HttpMethods._
-import MediaTypes._
+import spray.http.StatusCodes
 import spray.can.Http.RegisterChunkHandler
 import spray.client.pipelining._
-import scala.concurrent.Future
 import spray.httpx.SprayJsonSupport._
 import spray.json.DefaultJsonProtocol._
 import spray.json.AdditionalFormats
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
-import java.io.ByteArrayOutputStream
-import java.io.File
-import scala.concurrent.Await
+
+import HttpMethods._
+import MediaTypes._
+
 import akka.pattern.ask
 import akka.util.Timeout
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import javax.crypto._
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
+
+import java.io._
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.awt.image.BufferedImage
 import java.util.Base64
+import java.math.BigInteger
 import java.security._
+import java.security.spec._
+import java.security.Key
+import java.security.spec._
+import java.security.spec.X509EncodedKeySpec
+import java.security.interfaces._
+
+import javax.imageio.ImageIO
+import javax.crypto._
+import javax.crypto.spec._
+import javax.crypto.spec.SecretKeySpec
+import com.sun.crypto.provider.SunJCE
+import javax.crypto.interfaces._
 
 case class Start()
 case class CreateAlbum()
@@ -52,34 +72,129 @@ case class CreatePage()
 case class GetPage(id: String)
 case class UpdatePage(id: String)
 case class DeletePage(id: String)
+case class RequestPublicKey(publicKey: Array[Byte])
+case class RSAPublicKey(dhKey: Array[Byte], rsaKey:Array[Byte])
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
+  var skip1024Base:BigInteger = BigInteger.valueOf(2);
 
+  var skip1024ModulusBytes:Array[Byte] = Array(
+        0xF4.toByte, 0x88.toByte, 0xFD.toByte, 0x58.toByte,
+        0x4E.toByte, 0x49.toByte, 0xDB.toByte, 0xCD.toByte,
+        0x20.toByte, 0xB4.toByte, 0x9D.toByte, 0xE4.toByte,
+        0x91.toByte, 0x07.toByte, 0x36.toByte, 0x6B.toByte,
+        0x33.toByte, 0x6C.toByte, 0x38.toByte, 0x0D.toByte,
+        0x45.toByte, 0x1D.toByte, 0x0F.toByte, 0x7C.toByte,
+        0x88.toByte, 0xB3.toByte, 0x1C.toByte, 0x7C.toByte,
+        0x5B.toByte, 0x2D.toByte, 0x8E.toByte, 0xF6.toByte,
+        0xF3.toByte, 0xC9.toByte, 0x23.toByte, 0xC0.toByte,
+        0x43.toByte, 0xF0.toByte, 0xA5.toByte, 0x5B.toByte,
+        0x18.toByte, 0x8D.toByte, 0x8E.toByte, 0xBB.toByte,
+        0x55.toByte, 0x8C.toByte, 0xB8.toByte, 0x5D.toByte,
+        0x38.toByte, 0xD3.toByte, 0x34.toByte, 0xFD.toByte,
+        0x7C.toByte, 0x17.toByte, 0x57.toByte, 0x43.toByte,
+        0xA3.toByte, 0x1D.toByte, 0x18.toByte, 0x6C.toByte,
+        0xDE.toByte, 0x33.toByte, 0x21.toByte, 0x2C.toByte,
+        0xB5.toByte, 0x2A.toByte, 0xFF.toByte, 0x3C.toByte,
+        0xE1.toByte, 0xB1.toByte, 0x29.toByte, 0x40.toByte,
+        0x18.toByte, 0x11.toByte, 0x8D.toByte, 0x7C.toByte,
+        0x84.toByte, 0xA7.toByte, 0x0A.toByte, 0x72.toByte,
+        0xD6.toByte, 0x86.toByte, 0xC4.toByte, 0x03.toByte,
+        0x19.toByte, 0xC8.toByte, 0x07.toByte, 0x29.toByte,
+        0x7A.toByte, 0xCA.toByte, 0x95.toByte, 0x0C.toByte,
+        0xD9.toByte, 0x96.toByte, 0x9F.toByte, 0xAB.toByte,
+        0xD0.toByte, 0x0A.toByte, 0x50.toByte, 0x9B.toByte,
+        0x02.toByte, 0x46.toByte, 0xD3.toByte, 0x08.toByte,
+        0x3D.toByte, 0x66.toByte, 0xA4.toByte, 0x5D.toByte,
+        0x41.toByte, 0x9F.toByte, 0x9C.toByte, 0x7C.toByte,
+        0xBD.toByte, 0x89.toByte, 0x4B.toByte, 0x22.toByte,
+        0x19.toByte, 0x26.toByte, 0xBA.toByte, 0xAB.toByte,
+        0xA2.toByte, 0x5E.toByte, 0xC3.toByte, 0x55.toByte,
+        0xE9.toByte, 0x2F.toByte, 0x78.toByte, 0xC7.toByte
+      )
+
+  var skip1024Modulus:BigInteger   = new BigInteger(1, skip1024ModulusBytes);
+  var dhSkipParamSpec = new DHParameterSpec(skip1024Modulus, skip1024Base); 
+  
   import system.dispatcher
 
+  //val pr = scala.math.pow(2,1536) - scala.math.pow(2,1472) - 1 + scala.math.pow(2,64) * ( scala.math.pow(2,1406* scala.math.Pi) + 741804 )
+  val prime:BigInt = BigInt(BigInteger.valueOf(23))
+  val generator:BigInt = 5
   val system = systemArg
   val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
   var cipher = Cipher.getInstance("RSA")
-  implicit val timeout = Timeout(10000)
+  implicit val timeout = Timeout(5000)
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
+  var future:Future[Any]= null
 
 
   // ENCRYPT using the PRIVATE key
-  def encrypt(plaintext: Array[Byte]): String = {
+  def rsaencrypt(plaintext: Array[Byte]): String = {
 	    cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
 	    val encryptedBytes = cipher.doFinal(plaintext)
 	    return new String(Base64.getEncoder().encode(encryptedBytes))
   }  
 
   // DECRYPT using the PUBLIC key
-  def decrypt(chipertext: String, publicKey: PublicKey): Array[Byte] = {
+  def rsadecrypt(chipertext: Array[Byte], publicKey: PublicKey): Array[Byte] = {
         cipher.init(Cipher.DECRYPT_MODE, publicKey)
-        var ciphertextBytes = Base64.getDecoder().decode(chipertext.getBytes())
+        var ciphertextBytes = Base64.getDecoder().decode(chipertext)
         return cipher.doFinal(ciphertextBytes)
   }
 
+  def dhencrypt(key: BigInt): String = {
+    val algorithm = "DES";
+    val secretKey = new SecretKeySpec(key.toByteArray, algorithm)
+    val encipher = Cipher.getInstance(algorithm + "/ECB/PKCS5Padding")
+    encipher.init(Cipher.ENCRYPT_MODE, secretKey)
+    new String(encipher.doFinal(keyPair.getPublic().getEncoded))
+  }
+
+  def dhdecrypt(key: BigInt, msg: String): Array[Byte]= {
+    val algorithm = "DES";
+    val secretKey = new SecretKeySpec(key.toByteArray, algorithm)
+    val encipher = Cipher.getInstance(algorithm + "/ECB/PKCS5Padding")
+    encipher.init(Cipher.DECRYPT_MODE, secretKey)
+    encipher.doFinal(msg.getBytes)
+  }
+
+  def generateDHKey(numBits: Int):BigInt= {
+    val rand = scala.util.Random
+    BigInt(numBits, rand)
+  }
+
+  def generateDHSharedKey(otherskey: BigInt): BigInt = {
+    generator.modPow(otherskey, prime)
+  }
 
   def receive = { 
+    case RequestPublicKey(otherkey) =>
+      var bobKeyFac = KeyFactory.getInstance("DH")
+      var x509KeySpec = new X509EncodedKeySpec(otherkey)
+      var alicePubKey = bobKeyFac.generatePublic(x509KeySpec)
+      var dhParamSpec = (alicePubKey.asInstanceOf[DHPublicKey]).getParams()
+      var bobKpairGen = KeyPairGenerator.getInstance("DH")
+      bobKpairGen.initialize(dhParamSpec)
+      var bobKpair = bobKpairGen.generateKeyPair() 
+      
+      var bobKeyAgree = KeyAgreement.getInstance("DH");
+      bobKeyAgree.init(bobKpair.getPrivate()); 
+      var bobPubKeyEnc:Array[Byte] = bobKpair.getPublic().getEncoded(); 
+      bobKeyAgree.doPhase(alicePubKey, true);
+
+      var bobSharedKey:Array[Byte] = bobKeyAgree.generateSecret(); 
+      bobKeyAgree.doPhase(alicePubKey, true); 
+      
+      var bobDesKey = bobKeyAgree.generateSecret("DES"); 
+      var bobCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+      bobCipher.init(Cipher.ENCRYPT_MODE, bobDesKey); 
+      
+      var cleartext:Array[Byte] = keyPair.getPublic.getEncoded();
+      var ciphertext:Array[Byte] = bobCipher.doFinal(cleartext); 
+      
+      sender ! RSAPublicKey(bobPubKeyEnc, ciphertext)
+
     case CreateAlbum =>
         println("User " + self.path.name + " creating an Album..")
 
@@ -208,7 +323,37 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[Photo] = pipeline(Get("http://localhost:8080/Photo?id=" + id))
         response onComplete {
         	case Success(photo) =>
-	        	println("id = " + photo.id + "\n" +
+                println("GET PHOTO SUCCESS CASE")
+                val fromUser = context.actorFor("akka://facebook/user/" + photo.from)
+                var aliceKpairGen = KeyPairGenerator.getInstance("DH");
+                aliceKpairGen.initialize(dhSkipParamSpec);
+                var aliceKpair = aliceKpairGen.generateKeyPair();
+                var aliceKeyAgree = KeyAgreement.getInstance("DH");
+                aliceKeyAgree.init(aliceKpair.getPrivate());
+                var alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
+                future = fromUser ? RequestPublicKey(alicePubKeyEnc)
+                var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
+                var aliceKeyFac = KeyFactory.getInstance("DH");
+                var x509KeySpec = new X509EncodedKeySpec(otherkey.dhKey);
+                var bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
+                aliceKeyAgree.doPhase(bobPubKey, true); 
+
+
+                var aliceSharedSecret:Array[Byte] = aliceKeyAgree.generateSecret() 
+                aliceKeyAgree.doPhase(bobPubKey, true);
+                var aliceDesKey = aliceKeyAgree.generateSecret("DES");
+                
+                var aliceCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+                aliceCipher.init(Cipher.DECRYPT_MODE, aliceDesKey);
+                var recovered:Array[Byte] = aliceCipher.doFinal(otherkey.rsaKey);
+
+
+                var publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(recovered));
+
+                rsadecrypt(photo.image, publicKey)
+	        
+                println("Decryption Successful")
+                println("id = " + photo.id + "\n" +
 				            "album = " + photo.album + "\n" +
 				            "created_time = " + photo.created_time + "\n" +
 				            "from = " + photo.from + "\n" +

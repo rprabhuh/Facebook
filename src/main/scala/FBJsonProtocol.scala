@@ -3,24 +3,6 @@ import spray.json._
 import spray.httpx._
 import spray.http._
 
-/*sealed trait Status_Type { def sType: String }
-case object added_photos extends Status_Type  { val sType = "ADDED_PHOTOS" }
-case object wall_post extends Status_Type { val sType =  "WALL_POST" }
-case object approved_friend extends Status_Type { val sType = "APPROVED_FRIEND" }
-
-sealed trait Post_Type { def pType: String }
-case object link_post extends Post_Type { val pType =  "LINK" }
-case object status_post extends Post_Type { val pType = "STATUS" }
-case object photo_post extends Post_Type  { val pType = "PHOTO" }
-
-sealed trait Object_Type { def oType: String }
-case object page_type extends Object_Type { val oType =  "PAGE" }
-case object profile_type extends Object_Type { val oType = "PROFILE" }
-case object album_type extends Object_Type  { val oType = "ALBUM" }
-case object photo_type extends Object_Type  { val oType = "PHOTO" }
-case object post_type extends Object_Type  { val oType = "POST" }
-*/
-
 case class Experience (
     id: String,
     description: String,
@@ -36,18 +18,18 @@ case class Page (
     var can_post: Boolean,
     var cover: String,
     var description: String,
-    var emails: Array[String],
-    var is_community_page: Boolean,
-    var is_permanently_closed: Boolean,
-    var is_published: Boolean,
+    var emails: Array[String],          //enc
+    var is_community_page: Boolean,//remove
+    var is_permanently_closed: Boolean,//remove
+    var is_published: Boolean,//remove
     var like_count: Int,
     var link: String,
     var location: String,
     var from: String,
     var name: String,
     var parent_page: String,
-    var posts: Array[String],
-    var phone: String,
+    var posts: Array[String],           //enc
+    var phone: String,//remove
     var last_used_time: String,
     var likes: Array[String],
     var members: Array[String],
@@ -58,8 +40,8 @@ case class Profile (
     var auth: String,
     id: String,
     var bio: String,
-    var birthday: String,
-    var email: String,
+    var birthday: String,     //enc
+    var email: String,        //enc
     var first_name: String,
     var gender: String,
     var hometown: String,
@@ -85,7 +67,7 @@ case class Status (
     var created_time: String,
     var from: String,
     var location: String,
-    var message: String,
+    var message: String,        //enc
     var updated_time: String,
     var OCid: String
   )
@@ -121,7 +103,7 @@ case class Photo (
     var album: String,
     var created_time: String,
     var from: String,
-    var image: Array[Byte],
+    var image: Array[Byte], //enc
     var link: String,
     var name: String,
     var updated_time: String,
@@ -136,7 +118,7 @@ case class Comment (
     var object_id: String,
     var created_time: String,
     var from: String,
-    var message: String,
+    var message: String,//enc
     var parent: String,
     var user_comments: Array[String],
     var user_likes: Array[String]
@@ -147,7 +129,7 @@ case class ObjectComments (
     id: String,
     var object_type: String,
     var object_id: String,
-    var comments: Array[String]
+    var comments: Array[String]//enc
 )
 
 case class FriendReqest( 
