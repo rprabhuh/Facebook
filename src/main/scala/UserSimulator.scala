@@ -30,6 +30,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import java.io._
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.awt.image.BufferedImage
@@ -75,7 +76,7 @@ case class DeletePage(id: String)
 case class RequestPublicKey(publicKey: Array[Byte])
 case class RSAPublicKey(dhKey: Array[Byte], rsaKey:Array[Byte])
 case class AliceKey(enc: Array[Byte], agree: KeyAgreement)
-case class Encrypted(data: String, key: Array[Byte])
+case class Encrypted(data: Array[Byte], key: Array[Byte])
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
   var skip1024Base:BigInteger = BigInteger.valueOf(2);
@@ -133,15 +134,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 
   // ENCRYPT using the PRIVATE key
-  def rsaencrypt(plaintext: String): Encrypted = {
+  def rsaencrypt(plaintext: Array[Byte]): Encrypted = {
       val AESStringKey = "keyToSpec(key)"
       var keySpec = new DESKeySpec(AESStringKey.getBytes("UTF-8"))
       var keyFactory = SecretKeyFactory.getInstance("DES");
       var AESKey = keyFactory.generateSecret(keySpec)
       AESCipher.init(Cipher.ENCRYPT_MODE, AESKey)
-	    var encryptedBytes = AESCipher.doFinal(plaintext.getBytes)
+	    var encryptedBytes = AESCipher.doFinal(plaintext)
 
-      val encryptedData = new String(Base64.getEncoder().encode(encryptedBytes))
+      val encryptedData = Base64.getEncoder().encode(encryptedBytes)
 
       cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
       encryptedBytes = cipher.doFinal(AESKey.getEncoded())
@@ -151,7 +152,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   }  
 
   // DECRYPT using the PUBLIC key
-  def rsadecrypt(ciphertext: String, pubKey: Array[Byte], publicKey: PublicKey): Array[Byte] = {
+  def rsadecrypt(ciphertext: Array[Byte], pubKey: Array[Byte], publicKey: PublicKey): Array[Byte] = {
         cipher.init(Cipher.DECRYPT_MODE, publicKey)
         var keyBytes = Base64.getDecoder().decode(pubKey)
         val AESKeyBytes = cipher.doFinal(keyBytes)
@@ -162,6 +163,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         AESCipher.init(Cipher.DECRYPT_MODE, AESKey)
         return AESCipher.doFinal(Base64.getDecoder().decode(ciphertext))
+        //return AESCipher.doFinal(ciphertext)
   }
 
   def generatePubKey(): AliceKey= {
@@ -296,8 +298,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
     case DeleteAlbum(id) =>
     	println("User " + self.path.name + " deleting Album " + id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
-		response onComplete {
+		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
+		  response onComplete {
         	case Success(deAlbum) =>
         		println(deAlbum.entity.asString)
 
@@ -307,7 +309,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 
 
-      case UploadPhoto(id, album_id) =>
+    case UploadPhoto(id, album_id) =>
 
         println("User " + self.path.name + " uploading photo with " + id + 
             " to album " + album_id)
@@ -320,11 +322,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         bytearraystream.close()
 
         val list = Array("a","b","c")
-        val enc = rsaencrypt(id)
+
+        val enc = rsaencrypt(bytearray)
 
         import FBJsonProtocol._
-        var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, bytearray,
-                          "link", enc.data, "updated_time", "place", list, list, "-1", enc.key)
+        var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, enc.data,
+                          "link", id, "updated_time", "place", list, list, "-1", enc.key)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         response onComplete {
@@ -336,7 +339,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
 
 
-     case GetPhoto(id) =>
+    case GetPhoto(id) =>
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting a Photo with id = " + id)
 
@@ -355,10 +358,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 future = fromUser ? RequestPublicKey(alicePubKeyEnc)
                 var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
                 var publicKey = generateSecretKey(otherkey, aliceKeyAgree)
-                var decryptedname = new String (rsadecrypt(photo.name, photo.encKey, publicKey))
-                println("Decrypted Photo name is " + decryptedname)
+                var decrypted = rsadecrypt(photo.image, photo.encKey, publicKey)
+                println("Decrypted Photo name is  " + new String(decrypted))  
 
                 println("Decryption Successful")
+
+                val in: InputStream = new ByteArrayInputStream(decrypted);
+                val bImageFromConvert = ImageIO.read(in);
+                ImageIO.write(bImageFromConvert, "png", new File("retrieved/" + photo.name));
+
                 println("id = " + photo.id + "\n" +
 				            "album = " + photo.album + "\n" +
 				            "created_time = " + photo.created_time + "\n" +
@@ -403,18 +411,17 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
 
     case CreateProfile =>
-		 println("User " + self.path.name + " creating a profile")
-
-		 import FBJsonProtocol._
-		 val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
+		  println("User " + self.path.name + " creating a profile")
+		  import FBJsonProtocol._
+		  val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
 			   "email", "first_name", "gender", "hometown",
 			   Array("interested_in"), Array("languages"), "last_name", "link",
 			  "location", "middle_name", "political", "relationship_status",
 			  "religion", "significant_other", "updated_time", "website",
 			  Array("work"), "cover")
 
-		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
-		response onComplete {
+		  val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
+		  response onComplete {
         	case Success(crProfile) =>
         		println(crProfile.entity.asString)
 
