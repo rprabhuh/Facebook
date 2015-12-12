@@ -74,6 +74,7 @@ case class UpdatePage(id: String)
 case class DeletePage(id: String)
 case class RequestPublicKey(publicKey: Array[Byte])
 case class RSAPublicKey(dhKey: Array[Byte], rsaKey:Array[Byte])
+case class AliceKey(enc: Array[Byte], agree: KeyAgreement)
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
   var skip1024Base:BigInteger = BigInteger.valueOf(2);
@@ -159,13 +160,31 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     encipher.doFinal(msg.getBytes)
   }
 
-  def generateDHKey(numBits: Int):BigInt= {
-    val rand = scala.util.Random
-    BigInt(numBits, rand)
+  def generatePubKey(): AliceKey= {
+    var aliceKpairGen = KeyPairGenerator.getInstance("DH");
+    aliceKpairGen.initialize(dhSkipParamSpec);
+    var aliceKpair = aliceKpairGen.generateKeyPair();
+    var aliceKeyAgree = KeyAgreement.getInstance("DH");
+    aliceKeyAgree.init(aliceKpair.getPrivate());
+    var alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
+    AliceKey(alicePubKeyEnc, aliceKeyAgree)
   }
 
-  def generateDHSharedKey(otherskey: BigInt): BigInt = {
-    generator.modPow(otherskey, prime)
+  def generateSecretKey(otherkey:RSAPublicKey, aliceKeyAgree:KeyAgreement): PublicKey= {
+    var aliceKeyFac = KeyFactory.getInstance("DH");
+    var x509KeySpec = new X509EncodedKeySpec(otherkey.dhKey);
+    var bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
+    aliceKeyAgree.doPhase(bobPubKey, true);
+                
+    var aliceSharedSecret:Array[Byte] = aliceKeyAgree.generateSecret() 
+    aliceKeyAgree.doPhase(bobPubKey, true);
+    var aliceDesKey = aliceKeyAgree.generateSecret("DES");
+                
+    var aliceCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+    aliceCipher.init(Cipher.DECRYPT_MODE, aliceDesKey);
+    var recovered:Array[Byte] = aliceCipher.doFinal(otherkey.rsaKey);
+                
+    KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(recovered));
   }
 
   def receive = { 
@@ -325,32 +344,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         	case Success(photo) =>
                 println("GET PHOTO SUCCESS CASE")
                 val fromUser = context.actorFor("akka://facebook/user/" + photo.from)
-                var aliceKpairGen = KeyPairGenerator.getInstance("DH");
-                aliceKpairGen.initialize(dhSkipParamSpec);
-                var aliceKpair = aliceKpairGen.generateKeyPair();
-                var aliceKeyAgree = KeyAgreement.getInstance("DH");
-                aliceKeyAgree.init(aliceKpair.getPrivate());
-                var alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
-                
+                var tempobject =  generatePubKey()
+                var alicePubKeyEnc = tempobject.enc
+                var aliceKeyAgree = tempobject.agree
                 future = fromUser ? RequestPublicKey(alicePubKeyEnc)
                 var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
-                var aliceKeyFac = KeyFactory.getInstance("DH");
-                var x509KeySpec = new X509EncodedKeySpec(otherkey.dhKey);
-                var bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
-                aliceKeyAgree.doPhase(bobPubKey, true); 
-
-
-                var aliceSharedSecret:Array[Byte] = aliceKeyAgree.generateSecret() 
-                aliceKeyAgree.doPhase(bobPubKey, true);
-                var aliceDesKey = aliceKeyAgree.generateSecret("DES");
-                
-                var aliceCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-                aliceCipher.init(Cipher.DECRYPT_MODE, aliceDesKey);
-                var recovered:Array[Byte] = aliceCipher.doFinal(otherkey.rsaKey);
-
-
-                var publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(recovered));
-
+                var publicKey = generateSecretKey(otherkey, aliceKeyAgree)
                 var decryptedname = new String (rsadecrypt(photo.name, publicKey))
                 println("Decrypted Photo name is " + decryptedname)
 
