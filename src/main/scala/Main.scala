@@ -62,7 +62,7 @@ object Main extends App {
       var numAlbumsCreated = 0
 
       //30% of users create albums
-      for (i <- 0 until NETWORK_SIZE) {
+      for (i <- 1 until NETWORK_SIZE) {
         if (i%3 == 0)  { 
           fbUsers(i) ? CreateAlbum
           numAlbumsCreated += 1
@@ -73,7 +73,7 @@ object Main extends App {
       import scala.math.abs
       var R = new Random()
       var tmp: Int = 0
-      for(i <- 0 until NETWORK_SIZE) {
+      for(i <- 1 until NETWORK_SIZE) {
 
       	/*import system.dispatcher
       	//This will schedule to send <message>
@@ -83,7 +83,7 @@ object Main extends App {
 
      //   if (i%10 == 0)
      //   Everyone Updates their statuses
-          fbUsers(i) ! CreateStatus
+//          fbUsers(i) ! CreateStatus
 
         if (numAlbumsCreated > 1)
           tmp = abs(R.nextInt()%numAlbumsCreated)
@@ -92,7 +92,7 @@ object Main extends App {
           tmp = 1
 
         //20% of users upload photos
-        if (i%5 == 0) fbUsers(i) ? UploadPhoto("1.png", tmp.toString)
+        if (i%3 == 0) fbUsers(i) ? UploadPhoto("1.png", "1")
 
         if (i%30 == 0) fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
 
@@ -100,7 +100,7 @@ object Main extends App {
 
         //Everyone sends friend request to at least one other person
         //if (i !=0 && i%20 == 0) 
-        fbUsers(i) ? AddFriend((i-1).toString)
+//        fbUsers(i) ? AddFriend((i-1).toString)
 
         //20% of users comment on stuff
         if (i%5 == 0) 
@@ -121,10 +121,10 @@ object Main extends App {
         if (i%50 == 0) 
           fbUsers(i) ! GetAlbum(tmp.toString) 
         //2% of users see other's photos that do not exist
-        if (i%3 == 0) 
+        if (i%40 == 0) 
           fbUsers(i) ! GetPhoto("12379872834")
         //20% of users see other's photos
-        if (i%5 == 0) 
+        if (i%3 == 0) 
           fbUsers(i) ! GetPhoto("1") 
         //2% of all users see other's profiles that do not exist
         if (i%50 == 0) 
@@ -142,7 +142,7 @@ object Main extends App {
         if (i%50 ==0) 
           fbUsers(i) ! DeleteProfile
         //All users update their statuses
-          fbUsers(i) ! UpdateStatus("1") 
+//          fbUsers(i) ! UpdateStatus("1") 
         //2% users delete invalid status
         if (i%50 == 0) 
         fbUsers(0) ! DeleteStatus("1333987492")
@@ -153,7 +153,7 @@ object Main extends App {
         if (i%20 == 0) 
           fbUsers(i) ! CreatePage()
         //All users see pages
-          fbUsers(i) ! CreatePage()
+ //         fbUsers(i) ! CreatePage()
         //1% of users delete pages
         if (i%100 == 0) 
           fbUsers(i) ! DeletePage((i%100).toString)

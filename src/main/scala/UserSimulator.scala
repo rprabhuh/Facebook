@@ -130,14 +130,14 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 
   // ENCRYPT using the PRIVATE key
-  def rsaencrypt(plaintext: Array[Byte]): String = {
+  def rsaencrypt(plaintext: String): String = {
 	    cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
-	    val encryptedBytes = cipher.doFinal(plaintext)
+	    val encryptedBytes = cipher.doFinal(plaintext.getBytes)
 	    return new String(Base64.getEncoder().encode(encryptedBytes))
   }  
 
   // DECRYPT using the PUBLIC key
-  def rsadecrypt(chipertext: Array[Byte], publicKey: PublicKey): Array[Byte] = {
+  def rsadecrypt(chipertext: String, publicKey: PublicKey): Array[Byte] = {
         cipher.init(Cipher.DECRYPT_MODE, publicKey)
         var ciphertextBytes = Base64.getDecoder().decode(chipertext)
         return cipher.doFinal(ciphertextBytes)
@@ -300,7 +300,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         
         import FBJsonProtocol._
         var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, bytearray,
-                          "link", id, "updated_time", "place", list, list, "-1")
+                          "link", rsaencrypt(id), "updated_time", "place", list, list, "-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         response onComplete {
@@ -331,6 +331,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 var aliceKeyAgree = KeyAgreement.getInstance("DH");
                 aliceKeyAgree.init(aliceKpair.getPrivate());
                 var alicePubKeyEnc = aliceKpair.getPublic().getEncoded();
+                
                 future = fromUser ? RequestPublicKey(alicePubKeyEnc)
                 var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
                 var aliceKeyFac = KeyFactory.getInstance("DH");
@@ -350,8 +351,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
                 var publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(recovered));
 
-                rsadecrypt(photo.image, publicKey)
-	        
+                var decryptedname = new String (rsadecrypt(photo.name, publicKey))
+                println("Decrypted Photo name is " + decryptedname)
+
                 println("Decryption Successful")
                 println("id = " + photo.id + "\n" +
 				            "album = " + photo.album + "\n" +
