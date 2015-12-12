@@ -30,7 +30,6 @@ trait GraphAPI extends HttpService with ActorLogging {
 
     // Maps that will hold all the data.
     var albumMap = new TrieMap[String, Album]
-    var experienceMap = new TrieMap[String, Experience]
     var pageMap = new TrieMap[String, Page]
     var profileMap = new TrieMap[String, Profile]
     var friendlistMap = new TrieMap[String, FriendList]
@@ -180,7 +179,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               numComments += 1
               var newComment = new Comment((numComments).toString, comment.object_id,
                 comment.created_time, comment.from, comment.message, comment.parent,
-                comment.user_comments, comment.user_likes)
+                comment.user_comments, comment.user_likes, comment.encKey)
 
               if (objectCommentsMap.contains(comment.object_id)) {
                 commentMap(numComments.toString) = newComment
@@ -297,11 +296,9 @@ trait GraphAPI extends HttpService with ActorLogging {
               }
 
               val newPage = new Page(page.auth, (numPages).toString, page.about, page.can_post,
-                page.cover, page.description, page.emails, page.is_community_page,
-                page.is_permanently_closed, page.is_published, page.like_count, page.link,
-                page.location, page.from, page.name,
-                page.parent_page, page.posts, page.phone, format.format(new java.util.Date()),
-                page.likes, page.members, numOC.toString)
+                page.cover, page.description, page.emails, page.like_count, page.link,
+                page.location, page.from, page.name, page.parent_page, page.posts, page.likes,
+                page.members, numOC.toString, page.encKey)
 
               pageMap(numPages.toString) = newPage
               //println("-> User " + page.from + ": Page created with ID = " + newPage.id)
@@ -473,7 +470,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   format.format(new java.util.Date()),
                   status.from, status.location, status.message,
                   format.format(new java.util.Date()),
-                  numOC.toString())
+                  numOC.toString(), status.encKey)
                 statusMap(numstatus.toString) = newStatus
                 //println("-> Status" + status.from + ":Status Changed= " + status.message) 
                 complete("-> Status" + status.from + ": Status Changed= " + status.message)
@@ -531,7 +528,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               numComments += 1
               var newComment = new Comment((numComments).toString, comment.object_id,
                 comment.created_time, comment.from, comment.message, comment.parent,
-                comment.user_comments, comment.user_likes)
+                comment.user_comments, comment.user_likes, comment.encKey)
 
               if (objectCommentsMap.contains(comment.object_id)) {
                 commentMap(numComments.toString) = newComment
@@ -595,9 +592,9 @@ trait GraphAPI extends HttpService with ActorLogging {
             val newProfile = new Profile(profile.auth, profile.id, profile.bio, profile.birthday,
               profile.email, profile.first_name, profile.gender,
               profile.hometown, profile.interested_in, profile.languages, profile.last_name,
-              profile.link, profile.location, profile.middle_name, profile.political,
-              profile.relationship_status, profile.religion, profile.significant_other,
-              profile.updated_time, profile.website, profile.work, profile.cover)
+              profile.link, profile.location, profile.middle_name,
+              profile.relationship_status, profile.significant_other,
+              profile.updated_time, profile.website, profile.cover, profile.encKey)
 
             profileMap(profile.id) = newProfile
             //println("-> PROFILE created with id = " + newProfile.id)

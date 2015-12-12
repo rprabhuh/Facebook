@@ -359,7 +359,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
                 var publicKey = generateSecretKey(otherkey, aliceKeyAgree)
                 var decrypted = rsadecrypt(photo.image, photo.encKey, publicKey)
-                println("Decrypted Photo name is  " + new String(decrypted))  
+                //println("Decrypted Photo name is  " + new String(decrypted))  
 
                 println("Decryption Successful")
 
@@ -416,9 +416,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		  val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
 			   "email", "first_name", "gender", "hometown",
 			   Array("interested_in"), Array("languages"), "last_name", "link",
-			  "location", "middle_name", "political", "relationship_status",
-			  "religion", "significant_other", "updated_time", "website",
-			  Array("work"), "cover")
+			  "location", "middle_name", "relationship_status", "significant_other",
+        "updated_time", "website", "cover", "TODO:enc.key".getBytes)
 
 		  val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
 		  response onComplete {
@@ -451,9 +450,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 					"link = " + profile.link + "\n" +
 					"location = " + profile.location + "\n" +
 					"middle_name = " + profile.middle_name + "\n" +
-					"political = " + profile.political + "\n" +
 					"relationship_status = " + profile.relationship_status + "\n" +
-					"religion = " + profile.religion + "\n" +
 					"significant_other = " + profile.significant_other + "\n" +
 					"updated_time = " + profile.updated_time + "\n" +
 					"website = " + profile.website + "\n" +
@@ -471,9 +468,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		val P = new Profile (self.path.name, self.path.name, "bio", "birthday",
 			"email", "first_name", "gender", "hometown",
 			Array("interested_in"), Array("languages"), "last_name", "link",
-			"location", "middle_name", "political", "relationship_status",
-			"religion", "significant_other", "updated_time", "website",
-			Array("work"), "cover")
+			"location", "middle_name", "relationship_status", "significant_other",
+      "updated_time", "website", "cover", "TODO:enc.key".getBytes)
 
 
 		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
@@ -502,7 +498,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		println("User " + self.path.name + " commenting on Object " + objId)
 		var C = new Comment("null", "object_id", "created_time", self.path.name,
 			"This is the comment message!", "parent", Array("user_comments"),
-			Array("user_likes"))
+			Array("user_likes"), "TODO:encKey".getBytes)
 		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))
 		response onComplete {
         	case Success(crComment) =>
@@ -518,7 +514,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
               	" on Object " + objId)
     	var C = new Comment(id, objId, "created_time", self.path.name,
       	"This is the UPDATED comment message!", "parent", Array("user_comments"),
-      	Array("user_likes"))
+      	Array("user_likes"), "TODO:encKey".getBytes)
     	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Object", C))  
     	response onComplete {
         	case Success(upProfile) =>
@@ -544,7 +540,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	println("User " + self.path.name + " creating status " + "\"" + status + "\"")
     	import FBJsonProtocol._
     	var S = new Status(self.path.name, "null", "now", self.path.name, "location", status,
-                  	"time again", "-1")
+                  	"time again", "-1", "TODO: enc.key".getBytes)
     	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))  
     	response onComplete {
         	case Success(crStatus) =>
@@ -559,7 +555,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	println("User " + self.path.name + " is changing his status to " + "\"" + status + "\"")
     	import FBJsonProtocol._
     	var S = new Status(self.path.name, id, "now", self.path.name, "location", status,
-                  	"time again", "-1")
+                  	"time again", "-1", "TODO: enc.key".getBytes)
     	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))
     	response onComplete {
         	case Success(upStatus) =>
@@ -586,8 +582,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
 
         var P = new Page(self.path.name, "null", "about", true, "cover", "description", Array("emails"),
-                false, false, true, 12, "link", "location", "from", "name", "parent_page", Array("posts"),
-                "phone", "last_used_time", Array("likes"), Array("members"), "-1")
+                12, "link", "location", "from", "name", "parent_page", Array("posts"),
+                Array("likes"), Array("members"), "-1", "TODO:encKey".getBytes)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
         response onComplete {
@@ -615,17 +611,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		                  "can_post = " + crPage.can_post + "\n" +
 		                  "cover = " + crPage.cover + "\n" +
 		                  "description = " + crPage.description + "\n" +
-		                  "is_community_page = " + crPage.is_community_page + "\n" +
-		                  "is_permanently_closed = " + crPage.is_permanently_closed + "\n" +
-		                  "is_published = " + crPage.is_published + "\n" +
 		                  "like_count = " + crPage.like_count + "\n" +
 		                  "link = " + crPage.link + "\n" +
 		                  "location = " + crPage.location + "\n" +
 		                  "from = " + crPage.from + "\n" +
 		                  "name = " + crPage.name + "\n" +
 		                  "parent_page = " + crPage.parent_page + "\n" +
-		                  "phone = " + crPage.phone + "\n" +
-		                  "last_used_time = " + crPage.last_used_time + "\n" +
 		                  "OCid = " + crPage.OCid + "\n")
 
 		          println("\n")
@@ -641,8 +632,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
 
         val P = new Page(self.path.name, id, "about", true, "cover", "description", Array("emails"),
-                false, false, true, 12, "link", "location", "from", "name", "parent_page", Array("posts"),
-                "phone", "last_used_time", Array("likes"), Array("members"), "-1")
+                12, "link", "location", "from", "name", "parent_page", Array("posts"),
+                Array("likes"), Array("members"), "-1", "TODO: enc.key".getBytes)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
         response onComplete {
