@@ -397,7 +397,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                     photo.album, format.format(new java.util.Date()),
                     photo.from, photo.image, photo.link, photo.name,
                     format.format(new java.util.Date()), photo.place,
-                    photo.user_comments, photo.user_likes, numOC.toString)
+                    photo.user_comments, photo.user_likes, numOC.toString, photo.encKey)
                   photoMap(numphotos.toString) = newPhoto
                   var tempObj = albumMap(photo.album)
                   tempObj.photos = tempObj.photos :+ newPhoto.id

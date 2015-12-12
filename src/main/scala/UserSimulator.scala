@@ -75,6 +75,7 @@ case class DeletePage(id: String)
 case class RequestPublicKey(publicKey: Array[Byte])
 case class RSAPublicKey(dhKey: Array[Byte], rsaKey:Array[Byte])
 case class AliceKey(enc: Array[Byte], agree: KeyAgreement)
+case class Encrypted(data: String, key: Array[Byte])
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
   var skip1024Base:BigInteger = BigInteger.valueOf(2);
@@ -124,6 +125,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   val generator:BigInt = 5
   val system = systemArg
   val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+  var AESCipher = Cipher.getInstance("DES/ECB/PKCS5Padding")
   var cipher = Cipher.getInstance("RSA")
   implicit val timeout = Timeout(5000)
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
@@ -131,33 +133,35 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 
   // ENCRYPT using the PRIVATE key
-  def rsaencrypt(plaintext: String): String = {
-	    cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
-	    val encryptedBytes = cipher.doFinal(plaintext.getBytes)
-	    return new String(Base64.getEncoder().encode(encryptedBytes))
+  def rsaencrypt(plaintext: String): Encrypted = {
+      val AESStringKey = "keyToSpec(key)"
+      var keySpec = new DESKeySpec(AESStringKey.getBytes("UTF-8"))
+      var keyFactory = SecretKeyFactory.getInstance("DES");
+      var AESKey = keyFactory.generateSecret(keySpec)
+      AESCipher.init(Cipher.ENCRYPT_MODE, AESKey)
+	    var encryptedBytes = AESCipher.doFinal(plaintext.getBytes)
+
+      val encryptedData = new String(Base64.getEncoder().encode(encryptedBytes))
+
+      cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPrivate())
+      encryptedBytes = cipher.doFinal(AESKey.getEncoded())
+      val encryptedKey = Base64.getEncoder().encode(encryptedBytes)
+
+      return new Encrypted(encryptedData, encryptedKey)
   }  
 
   // DECRYPT using the PUBLIC key
-  def rsadecrypt(chipertext: String, publicKey: PublicKey): Array[Byte] = {
+  def rsadecrypt(ciphertext: String, pubKey: Array[Byte], publicKey: PublicKey): Array[Byte] = {
         cipher.init(Cipher.DECRYPT_MODE, publicKey)
-        var ciphertextBytes = Base64.getDecoder().decode(chipertext)
-        return cipher.doFinal(ciphertextBytes)
-  }
+        var keyBytes = Base64.getDecoder().decode(pubKey)
+        val AESKeyBytes = cipher.doFinal(keyBytes)
+        
+        var keySpec = new DESKeySpec(AESKeyBytes)
+        var kf = SecretKeyFactory.getInstance("DES");
+        var AESKey = kf.generateSecret(keySpec);
 
-  def dhencrypt(key: BigInt): String = {
-    val algorithm = "DES";
-    val secretKey = new SecretKeySpec(key.toByteArray, algorithm)
-    val encipher = Cipher.getInstance(algorithm + "/ECB/PKCS5Padding")
-    encipher.init(Cipher.ENCRYPT_MODE, secretKey)
-    new String(encipher.doFinal(keyPair.getPublic().getEncoded))
-  }
-
-  def dhdecrypt(key: BigInt, msg: String): Array[Byte]= {
-    val algorithm = "DES";
-    val secretKey = new SecretKeySpec(key.toByteArray, algorithm)
-    val encipher = Cipher.getInstance(algorithm + "/ECB/PKCS5Padding")
-    encipher.init(Cipher.DECRYPT_MODE, secretKey)
-    encipher.doFinal(msg.getBytes)
+        AESCipher.init(Cipher.DECRYPT_MODE, AESKey)
+        return AESCipher.doFinal(Base64.getDecoder().decode(ciphertext))
   }
 
   def generatePubKey(): AliceKey= {
@@ -316,10 +320,11 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         bytearraystream.close()
 
         val list = Array("a","b","c")
-        
+        val enc = rsaencrypt(id)
+
         import FBJsonProtocol._
         var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, bytearray,
-                          "link", rsaencrypt(id), "updated_time", "place", list, list, "-1")
+                          "link", enc.data, "updated_time", "place", list, list, "-1", enc.key)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         response onComplete {
@@ -350,7 +355,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 future = fromUser ? RequestPublicKey(alicePubKeyEnc)
                 var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
                 var publicKey = generateSecretKey(otherkey, aliceKeyAgree)
-                var decryptedname = new String (rsadecrypt(photo.name, publicKey))
+                var decryptedname = new String (rsadecrypt(photo.name, photo.encKey, publicKey))
                 println("Decrypted Photo name is " + decryptedname)
 
                 println("Decryption Successful")

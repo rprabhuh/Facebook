@@ -110,7 +110,8 @@ case class Photo (
     var place: String,
     var user_comments: Array[String],
     var user_likes: Array[String],
-    var OCid: String
+    var OCid: String,
+    var encKey: Array[Byte]
 )
 
 case class Comment (
@@ -146,7 +147,7 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val statusFormat = jsonFormat8(Status.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)
     implicit val experienceFormat = jsonFormat5(Experience.apply)
-    implicit val photoFormat = jsonFormat13(Photo.apply)
+    implicit val photoFormat = jsonFormat14(Photo.apply)
     implicit val commentFormat = jsonFormat8(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat3(FriendReqest.apply)
     implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
