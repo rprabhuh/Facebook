@@ -1,16 +1,20 @@
 import spray.http.StatusCodes
+import spray.httpx.SprayJsonSupport._
+import spray.can.Http
+import spray.can.server.Stats
+import spray.can.Http.RegisterChunkHandler
+import spray.util._
+import spray.routing._
+
 import scala.concurrent.duration._
+import scala.collection.concurrent.TrieMap
+import scala.util.parsing.json._
+
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor._
-import spray.can.Http
-import spray.can.server.Stats
-import spray.util._
-import spray.can.Http.RegisterChunkHandler
-import spray.routing._
-import spray.httpx.SprayJsonSupport._
-import scala.util.parsing.json._
-import scala.collection.concurrent.TrieMap
+
+import java.security.MessageDigest
 
 object ObjectType extends Enumeration {
   type ObjectType = Value
@@ -50,6 +54,11 @@ trait GraphAPI extends HttpService with ActorLogging {
     var numComments = 0
     var numOC = 0
 
+    def shait(uuid: String): String =  {
+      val sha = MessageDigest.getInstance("SHA-256")
+      sha.update(uuid.getBytes("UTF-8"))  
+      sha.digest().map("%02X" format _).mkString
+    }
     implicit val timeout = Timeout(10 seconds)
     val format = new java.text.SimpleDateFormat()
     import FBJsonProtocol._
@@ -80,7 +89,10 @@ trait GraphAPI extends HttpService with ActorLogging {
         post {
           entity(as[Album]) { album =>
             if (album.id == "null") {
-              if(album.auth != album.from) {
+              var from = album.from
+              if(profileMap.contains(from)) {
+                var auth = shait(album.auth)
+                if(auth != profileMap(from).auth) {
                 println(" -> " + album.auth + " is not allowed to create an album")
                 complete(album.auth + " is not allowed to create an album")
               } else {
@@ -94,7 +106,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   println("-> User " + album.from + ": Album " + numalbums.toString + " added to objectCommentsMap")	
                 }
 
-                var newAlbum = new Album(album.auth, (numalbums).toString,
+                var newAlbum = new Album(shait(album.auth), (numalbums).toString,
                   album.count, album.cover_photo, album.created_time,
                   album.description, album.from, album.link, album.location,
                   album.name, album.place, album.privacy, format.format(new java.util.Date()),
@@ -104,9 +116,15 @@ trait GraphAPI extends HttpService with ActorLogging {
                 complete("User " + album.from + ": Album created with ID = " + newAlbum.id)
               }
               } else {
+                complete(album.auth + " is not allowed to create an album")
+              }
+
+              } else {
                 // Update an existing album
                 if(albumMap.contains(album.id)) {
-                  if(albumMap(album.id).from != album.auth) {
+                  var from = album.from
+                  var auth = shait(profileMap(from).auth)
+                  if(auth != album.auth) {
                     println(album.auth + " is not allowed to update album " + album.id)
                     complete(album.auth + " is not allowed to update album " + album.id)
                   } else { 
@@ -280,10 +298,13 @@ trait GraphAPI extends HttpService with ActorLogging {
       post {
         entity(as[Page]) { page =>
           if (page.id == "null") {
-            if(page.auth != page.from) {
-              //println(page.auth + " is not allowed to create this page")
-              complete(page.auth + " is not allowed to create this page")
-            } else {
+            var from = page.from
+            if(profileMap.contains(from)) { 
+              var auth = shait(page.auth)
+              if(auth != profileMap(from).auth) {
+                //println(page.auth + " is not allowed to create this page")
+                complete(page.from + " is not allowed to create this page")
+              } else {
               numPages += 1
 
               // Add to objectCommentsMap
@@ -304,25 +325,36 @@ trait GraphAPI extends HttpService with ActorLogging {
               //println("-> User " + page.from + ": Page created with ID = " + newPage.id)
               complete("-> User " + page.from + ": Page created with ID = " + newPage.id)
             }
-          }
-          else {
+            } else {
+              complete(page.from + " is not allowed to create this page")
+            }
+            //Get the from field.
+            //Look Up that actor's auth
+            //Compare with the current auth
+          } else {
 
             // Update an exising page
             if(pageMap.contains(page.id)) {
-              if(pageMap(page.id).from != page.auth) {
+              var from = page.from
+              if(profileMap.contains(from)) { 
+                var auth = shait(page.auth)
+                if(auth != profileMap(from).auth) {
                 //println(page.auth + " is not allowed to update page "+page.id )
                 complete(page.auth + " is not allowed to update page "+page.id )
+                } else {
+                  var P = page
+                  P.OCid = pageMap(page.id).OCid
+                  pageMap(page.id) = P
+                  //println("-> Page" + page.id + " updated!")
+                  complete("-> Page" + page.id + " updated!")
+                }
               } else {
-                var P = page
-                P.OCid = pageMap(page.id).OCid
-                pageMap(page.id) = P
-                //println("-> Page" + page.id + " updated!")
-                complete("-> Page" + page.id + " updated!")
+                complete(page.from + " is not allowed to create this page")
               }
-              } else {
+            } else {
                 println("-> Page with id " + page.id + " does not exist!")
                 complete(StatusCodes.NotFound)
-              }
+            }
           }
         }
       } ~
@@ -369,7 +401,10 @@ trait GraphAPI extends HttpService with ActorLogging {
         entity(as[Photo]) { photo =>
         println("-> Got a post for photos")
           if(photo.id == "null") {
-            if(photo.auth != photo.from) {
+            var from = photo.from
+            if(profileMap.contains(from)){
+              var auth = shait(photo.auth)
+              if(auth != profileMap(from).auth) {
               //println(photo.auth + " is not allowed to post this picture")
               complete(photo.auth+ " is not allowed to post this picture")
             } else {
@@ -406,6 +441,9 @@ trait GraphAPI extends HttpService with ActorLogging {
                   //println("-> Couldn't upload photo to Album " + photo.album +". No such album")
                   complete("Couldn't upload photo to Album " + photo.album +". No such album")
                 }
+            }
+            } else {
+                  complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
             }
             } else {
               println("-> Photo with id " + photo.id + " was not found")
@@ -454,7 +492,9 @@ trait GraphAPI extends HttpService with ActorLogging {
         post {
           entity(as[Status]) { status =>
             if(status.id == "null") {
-              if(status.auth != status.from) {
+              var from = status.from
+              var auth = shait(status.auth)
+              if(auth !=  profileMap(from).auth) {
                 println(status.auth + " is not allowed to post statuses to the wall of " + status.from)
                 complete(status.auth + " is not allowed to post statuses to the wall of " + status.from)
               } else {
@@ -464,9 +504,9 @@ trait GraphAPI extends HttpService with ActorLogging {
                   numOC += 1;
                   val OC = new ObjectComments(numOC.toString, STATUS, numstatus.toString, Array(""))
                   objectCommentsMap(numOC.toString) = OC
-                  println("-> User " + status.from + ": Status" + numalbums.toString + " added to objectCommentsMap")
+                  println("-> User " + status.from + ": Status" + numstatus.toString + " added to objectCommentsMap")
                 }
-                var newStatus = new Status(status.auth, (numstatus).toString,
+                var newStatus = new Status(auth, (numstatus).toString,
                   format.format(new java.util.Date()),
                   status.from, status.location, status.message,
                   format.format(new java.util.Date()),
@@ -478,7 +518,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               } else {
                 //Update a status
                 if(statusMap.contains(status.id)) {
-                  if(statusMap(status.id).from != status.auth) {
+                  if(shait(statusMap(status.id).auth) != status.auth) {
                     println(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
                     complete(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
                   } else {
@@ -577,7 +617,8 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Profile]) { profile =>
             // Existing user
             if(profileMap.contains(profile.id)) {
-              if(profileMap(profile.id).auth != profile.auth) {
+              var auth = shait(profile.auth)
+              if(profileMap(profile.id).auth != auth) {
                 //println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
                 complete(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
               } else {
@@ -585,11 +626,10 @@ trait GraphAPI extends HttpService with ActorLogging {
                 //println("-> Profile with id " + profile.id + " updated!")
                 complete("Profile with id " + profile.id + " updated!")
               }
-            }
-
-            // Creating a user profile
-          else {
-            val newProfile = new Profile(profile.auth, profile.id, profile.bio, profile.birthday,
+            } else {// Creating a user profile 
+              var uuid = java.util.UUID.randomUUID.toString
+              var digest = shait(uuid)
+              val newProfile = new Profile(digest, profile.id, profile.bio, profile.birthday,
               profile.email, profile.first_name, profile.gender,
               profile.hometown, profile.interested_in, profile.languages, profile.last_name,
               profile.link, profile.location, profile.middle_name,
@@ -597,8 +637,8 @@ trait GraphAPI extends HttpService with ActorLogging {
               profile.updated_time, profile.website, profile.cover, profile.encKey)
 
             profileMap(profile.id) = newProfile
-            //println("-> PROFILE created with id = " + newProfile.id)
-            complete("-> PROFILE created with id = " + newProfile.id)
+            println("-> PROFILE created with id = " + newProfile.id)
+            complete(uuid)
           }
           }
         } ~
@@ -621,7 +661,10 @@ trait GraphAPI extends HttpService with ActorLogging {
       post{
         entity(as[FriendReqest]) { fr =>
           //Add from
-          if(fr.fromid != fr.auth && fr.toid != fr.auth) {
+          var from = fr.fromid
+          if(profileMap.contains(from)) {
+            var auth = shait(profileMap(from).auth) 
+          if(auth != fr.auth) { 
             //println(fr.auth + " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
             complete(fr.auth+ " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
           } else {
@@ -668,6 +711,9 @@ trait GraphAPI extends HttpService with ActorLogging {
                  println("-> The requested user was not found")
                  complete(StatusCodes.NotFound)
                }
+          }
+          } else {
+          		complete("Friend Request was not sent. Authentication issue")
           }
         }   
 
