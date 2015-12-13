@@ -83,6 +83,7 @@ case class Encrypted(data: Array[Byte], key: Array[Byte])
 
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
+  var myAuthString = ""
   var skip1024Base:BigInteger = BigInteger.valueOf(2);
 
   var skip1024ModulusBytes:Array[Byte] = Array(
@@ -228,7 +229,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
 
-        val A = new Album(self.path.name, "null", 0, "33", "12:23:12", "description: String",
+        val A = new Album(myAuthString, "null", 0, "33", "12:23:12", "description: String",
                           self.path.name, "link: String", "location: String", "name: String",
                           "place: String", "privacy: String", "null", Array("cover_photo"),"-1")
 
@@ -285,7 +286,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
 
-        var A = new Album(self.path.name, id, 12, "cover_photo", "time", "description: String",
+        var A = new Album(myAuthString, id, 12, "cover_photo", "time", "description: String",
           self.path.name, "link: String", "location: String", "name: String", "place: String",
           "privacy: String", "null", Array("cover_photo"), "1" )
 
@@ -330,7 +331,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val enc = rsaencrypt(bytearray, AESStringKey)
 
         import FBJsonProtocol._
-        var A = new Photo(self.path.name, "null", album_id, "created_time", self.path.name, enc.data,
+        var A = new Photo(myAuthString, "null", album_id, "created_time", self.path.name, enc.data,
                           "link", id, "updated_time", "place", list, list, "-1", enc.key)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
@@ -366,8 +367,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                   future = fromUser ? RequestPublicKey(alicePubKeyEnc)
                   var otherkey = Await.result(future, timeout.duration).asInstanceOf[RSAPublicKey]
                   publicKey = generateSecretKey(otherkey, aliceKeyAgree)
-                }
-                else {
+                } else {
                   println(self.path.name + " accessing his own publicKey")
                   publicKey = keyPair.getPublic()
                 }
@@ -413,7 +413,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         println("User " + self.path.name + " sending friend request to " + id)
 
         import FBJsonProtocol._
-        var A = new FriendReqest(self.path.name, self.path.name, id)
+        var A = new FriendReqest(myAuthString, self.path.name, id)
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
         response onComplete {
         	case Success(addFr) =>
@@ -445,7 +445,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		  val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
 		  response onComplete {
         	case Success(crProfile) =>
-        		println(crProfile.entity.asString)
+              myAuthString = crProfile.entity.asString
+              println("Facebook Profile successfully created for " + self.path.name)
 
         	case Failure(error) =>
         		println("ERROR while creating profile : " + error)
@@ -509,19 +510,17 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
 
 	case UpdateProfile =>
-		println("User " + self.path.name + " updating profile")
+		println("User " + self.path.name + " updating profile") 
+        val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
+        var encBDay = rsaencrypt("04/03/1990".getBytes, AESStringKey)
 
-    val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-    var encBDay = rsaencrypt("04/03/1990".getBytes, AESStringKey)
-    
-    var emailAddr = "profile" + self.path.name + "@user.com"
-    var encEmail = rsaencrypt(emailAddr.getBytes, AESStringKey)
-    
-    println("User " + self.path.name + " updating a profile with encrypted birthday " + 
-            new String(encBDay.data) + " and encrypted email " + new String(encEmail.data))
+        var emailAddr = "profile" + self.path.name + "@user.com"
+        var encEmail = rsaencrypt(emailAddr.getBytes, AESStringKey) 
+        println("User " + self.path.name + " updating a profile with encrypted birthday " + 
+          new String(encBDay.data) + " and encrypted email " + new String(encEmail.data))
 
 		import FBJsonProtocol._
-		val P = new Profile (self.path.name, self.path.name, "bio", new String(encBDay.data),
+		val P = new Profile (myAuthString, self.path.name, "bio", new String(encBDay.data),
 			new String(encEmail.data), "first_name", "gender", "hometown",
 			Array("interested_in"), Array("languages"), "last_name", "link",
 			"location", "middle_name", "relationship_status", "significant_other",
@@ -680,7 +679,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 " --> encrypted to " + new String(encStatus.data))
 
     	import FBJsonProtocol._
-    	var S = new Status(self.path.name, "null", "now", self.path.name, "location",
+    	var S = new Status(myAuthString, "null", "now", self.path.name, "location",
                     new String(encStatus.data),
                   	"time again", "-1", encStatus.key)
     	
@@ -694,17 +693,17 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
 
   case UpdateStatus(id) =>
-    	val status = "User " + self.path.name + " is updating his status"
-      val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-      var encStatus = rsaencrypt(status.getBytes, AESStringKey)
+    val status = "User " + self.path.name + " is updating his status"
+    val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
+    var encStatus = rsaencrypt(status.getBytes, AESStringKey)
 
-      println("User " + self.path.name + " updating status to: " + status +
+    println("User " + self.path.name + " updating status to: " + status +
                 " --> encrypted to " + new String(encStatus.data))
 
-    	import FBJsonProtocol._
-    	var S = new Status(self.path.name, id, "now", self.path.name, "location",
-                    new String(encStatus.data),
-                  	"time again", "-1", encStatus.key)
+    import FBJsonProtocol._
+    var S = new Status(myAuthString, id, "now", self.path.name, "location",
+             new String(encStatus.data),
+            	"time again", "-1", encStatus.key)
 
     	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))
     	response onComplete {
@@ -733,7 +732,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         println("User " + self.path.name + " creating a Page with encrypted email " + encEmail.data)
         
         import FBJsonProtocol._
-        var P = new Page(self.path.name, "null", "about", true, "cover", "description",
+        var P = new Page(myAuthString, "null", "about", true, "cover", "description",
                 new String(encEmail.data),
                 12, "link", "location", self.path.name, "name", "parent_page",
                 Array("likes"), Array("members"), "-1", encEmail.key)
@@ -804,7 +803,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
 
-        val P = new Page(self.path.name, id, "about", true, "cover", "description", 
+        val P = new Page(myAuthString, id, "about", true, "cover", "description", 
                 new String(encEmail.data),
                 12, "link", "location", "from", "name", "parent_page",
                 Array("likes"), Array("members"), "-1", "TODO: enc.key".getBytes)
