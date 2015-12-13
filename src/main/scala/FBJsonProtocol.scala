@@ -11,14 +11,13 @@ case class Page (
     var can_post: Boolean,
     var cover: String,
     var description: String,
-    var emails: Array[String],          //enc
+    var email: String,          //enc
     var like_count: Int,
     var link: String,
     var location: String,
     var from: String,
     var name: String,
     var parent_page: String,
-    var posts: Array[String],           //enc
     var likes: Array[String],
     var members: Array[String],
     var OCid: String,
@@ -131,7 +130,7 @@ case class FriendReqest(
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
     implicit val albumFormat = jsonFormat15(Album)
-    implicit val pageFormat = jsonFormat18(Page.apply)
+    implicit val pageFormat = jsonFormat17(Page.apply)
     implicit val profileFormat = jsonFormat20(Profile.apply)
     implicit val statusFormat = jsonFormat9(Status.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)

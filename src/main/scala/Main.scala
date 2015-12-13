@@ -4,6 +4,9 @@ import akka.io.IO
 import spray.can.Http
 import akka.util.Timeout
 
+import ObjectType._
+
+
 object Main extends App {
   override def main(args: Array[String]) { 
 
@@ -62,12 +65,15 @@ object Main extends App {
       var numAlbumsCreated = 0
 
       //30% of users create albums
-      for (i <- 1 until NETWORK_SIZE) {
-        if (i%3 == 0)  { 
+      for (i <- 0 until NETWORK_SIZE) {
+        if (i%30 == 0)  { 
           fbUsers(i) ? CreateAlbum
           numAlbumsCreated += 1
         }
       }
+      
+      Thread sleep(500)
+      fbUsers(1) ? CreateComment(ObjectType.ALBUM, "1")
       
       import scala.util.Random
       import scala.math.abs
@@ -83,7 +89,7 @@ object Main extends App {
 
      //   if (i%10 == 0)
      //   Everyone Updates their statuses
-//          fbUsers(i) ! CreateStatus
+          fbUsers(i) ! CreateComment(ObjectType.ALBUM, tmp.toString)
 
         if (numAlbumsCreated > 1)
           tmp = abs(R.nextInt()%numAlbumsCreated)
@@ -92,7 +98,7 @@ object Main extends App {
           tmp = 1
 
         //20% of users upload photos
-        if (i%3 == 0) fbUsers(i) ? UploadPhoto("1.png", "1")
+        if (i%30 == 0) fbUsers(i) ? UploadPhoto("1.png", "1")
 
         if (i%30 == 0) fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
 
@@ -102,12 +108,15 @@ object Main extends App {
         //if (i !=0 && i%20 == 0) 
 //        fbUsers(i) ? AddFriend((i-1).toString)
 
+        if (i%30 == 0) 
+          fbUsers(i) ! GetPage("1")
+
         //20% of users comment on stuff
-        if (i%5 == 0) 
-          fbUsers(i) ? CreateComment(tmp.toString)
+        if (i%50 == 0) 
+          fbUsers(i) ? CreateComment(ObjectType.ALBUM, tmp.toString)
         //10% of users comment on stuff
-        if (i%10 == 0) 
-          fbUsers(i) ! UpdateComment("1", tmp.toString)
+        if (i%1 == 0) 
+          fbUsers(i) ! UpdateComment("1", ObjectType.ALBUM, "1")
         //50% of users delete their own comments
         if (i%50 == 0) 
           fbUsers(i) ! DeleteComment("2")
@@ -124,25 +133,27 @@ object Main extends App {
         if (i%40 == 0) 
           fbUsers(i) ! GetPhoto("12379872834")
         //20% of users see other's photos
-        if (i%3 == 0) 
+        if (i%30 == 0) 
           fbUsers(i) ! GetPhoto("1") 
         //2% of all users see other's profiles that do not exist
         if (i%50 == 0) 
           fbUsers(0) ! GetProfile("1023789748")
         //10% of users see their own profiles
-        if (i%10 == 0) 
-          fbUsers(i) ! GetProfile(i.toString)
+        //if (i%10 == 0) 
+          //fbUsers(i) ! GetProfile(((i+1)%NETWORK_SIZE).toString)
         //5% of users see other's profiles
         if (i != 0 && i%20 == 0) 
           fbUsers(i) ! GetProfile((i-10).toString)
         //10% of users update their profiles regularly
-        if (i%10 ==0) 
+        if (i%10 == 0) 
           fbUsers(i) ! UpdateProfile
         //2% of users delete their profiles
         if (i%50 ==0) 
           fbUsers(i) ! DeleteProfile
         //All users update their statuses
-//          fbUsers(i) ! UpdateStatus("1") 
+          //fbUsers(3) ! GetStatus("1")
+          //Thread sleep(500) 
+          //fbUsers(1) ! UpdateStatus("1") 
         //2% users delete invalid status
         if (i%50 == 0) 
         fbUsers(0) ! DeleteStatus("1333987492")
@@ -157,7 +168,13 @@ object Main extends App {
         //1% of users delete pages
         if (i%100 == 0) 
           fbUsers(i) ! DeletePage((i%100).toString)
+
+        //Thread sleep(500)
+        //fbUsers(i) ! GetProfile(((i+1)%NETWORK_SIZE).toString)
       }
+
+      Thread sleep(1000)
+      //fbUsers(2) ! GetStatus("1")
   }
 
 

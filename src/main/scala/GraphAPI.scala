@@ -317,8 +317,8 @@ trait GraphAPI extends HttpService with ActorLogging {
               }
 
               val newPage = new Page(page.auth, (numPages).toString, page.about, page.can_post,
-                page.cover, page.description, page.emails, page.like_count, page.link,
-                page.location, page.from, page.name, page.parent_page, page.posts, page.likes,
+                page.cover, page.description, page.email, page.like_count, page.link,
+                page.location, page.from, page.name, page.parent_page, page.likes,
                 page.members, numOC.toString, page.encKey)
 
               pageMap(numPages.toString) = newPage
@@ -398,83 +398,77 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       }~
       post {
-        entity(as[Photo]) { photo =>
-        println("-> Got a post for photos")
-          if(photo.id == "null") {
-            var from = photo.from
-            if(profileMap.contains(from)){
-              var auth = shait(photo.auth)
-              if(auth != profileMap(from).auth) {
-              //println(photo.auth + " is not allowed to post this picture")
-              complete(photo.auth+ " is not allowed to post this picture")
-            } else {
-              if(albumMap.contains(photo.album)) {
-                if(albumMap(photo.album).from != photo.auth) {
-                  //println(photo.auth+ " is not allowed to post photos to album" + photo.album)
-                  complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
-                } else {
+          entity(as[Photo]) { photo =>
+          println("-> Got a post for photos")
+            if(photo.id == "null") {
+              if(photo.auth != photo.from) {
+                //println(photo.auth + " is not allowed to post this picture")
+                complete(photo.auth+ " is not allowed to post this picture")
+              } else {
+                if(albumMap.contains(photo.album)) {
+                  if(albumMap(photo.album).from != photo.auth) {
+                    //println(photo.auth+ " is not allowed to post photos to album" + photo.album)
+                    complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
+                  } else {
 
-                  numphotos += 1
+                    numphotos += 1
 
-                  // Add to objectCommentsMap
-                  if (!objectCommentsMap.contains(photo.OCid)) {
-                    //import ObjectType._
-                    numOC += 1;
-                    val OC = new ObjectComments(numOC.toString, PHOTO, numphotos.toString, Array(""))
-                    objectCommentsMap(numOC.toString) = OC
-                    println("-> User " + photo.from + ": Page " + numphotos.toString + " added to objectCommentsMap")	
+                    // Add to objectCommentsMap
+                    if (!objectCommentsMap.contains(photo.OCid)) {
+                      //import ObjectType._
+                      numOC += 1;
+                      val OC = new ObjectComments(numOC.toString, PHOTO, numphotos.toString, Array(""))
+                      objectCommentsMap(numOC.toString) = OC
+                      println("-> User " + photo.from + ": Page " + numphotos.toString + " added to objectCommentsMap")	
+                    }
+
+                    var newPhoto = new Photo(photo.auth, numphotos.toString,
+                      photo.album, format.format(new java.util.Date()),
+                      photo.from, photo.image, photo.link, photo.name,
+                      format.format(new java.util.Date()), photo.place,
+                      photo.user_comments, photo.user_likes, numOC.toString, photo.encKey)
+                    photoMap(numphotos.toString) = newPhoto
+                    var tempObj = albumMap(photo.album)
+                    tempObj.photos = tempObj.photos :+ newPhoto.id
+                    albumMap(photo.album) = tempObj
+                    //println("-> Photo with id "+ newPhoto.id + " Uploaded!")
+                    complete("Photo with id "+ newPhoto.id + " Uploaded!")
                   }
-
-                  var newPhoto = new Photo(photo.auth, numphotos.toString,
-                    photo.album, format.format(new java.util.Date()),
-                    photo.from, photo.image, photo.link, photo.name,
-                    format.format(new java.util.Date()), photo.place,
-                    photo.user_comments, photo.user_likes, numOC.toString, photo.encKey)
-                  photoMap(numphotos.toString) = newPhoto
-                  var tempObj = albumMap(photo.album)
-                  tempObj.photos = tempObj.photos :+ newPhoto.id
-                  albumMap(photo.album) = tempObj
-                  //println("-> Photo with id "+ newPhoto.id + " Uploaded!")
-                  complete("Photo with id "+ newPhoto.id + " Uploaded!")
+                  } else {
+                    //println("-> Couldn't upload photo to Album " + photo.album +". No such album")
+                    complete("Couldn't upload photo to Album " + photo.album +". No such album")
+                  }
+              }
+              } else {
+                println("-> Photo with id " + photo.id + " was not found")
+                complete(StatusCodes.NotFound)
+              }
+          }
+        }~
+        delete {
+          parameter("del_id") { del_id =>
+            println("-> Photo: DELETE request received for id = " + del_id)
+            if(photoMap.contains(del_id)) {
+              var i = 0
+              val OCid = photoMap(del_id).OCid 
+              var comments = objectCommentsMap(OCid).comments
+              var size = comments.size
+              if (objectCommentsMap.contains(OCid)) {
+                for(j<-0 until size) {
+                  if(commentMap.contains(comments(j)))
+                    commentMap.remove(comments(j))
                 }
-                } else {
-                  //println("-> Couldn't upload photo to Album " + photo.album +". No such album")
-                  complete("Couldn't upload photo to Album " + photo.album +". No such album")
-                }
-            }
+                objectCommentsMap.remove(OCid)
+              }
+              photoMap.remove(del_id)
+              //println("-> Photo with id = " + del_id + " was deleted!")
+              complete("Photo with id = " + del_id + " was deleted!")
             } else {
-                  complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
-            }
-            } else {
-              println("-> Photo with id " + photo.id + " was not found")
+              println("-> Photo with id " + del_id + " was not found")
               complete(StatusCodes.NotFound)
             }
-        }
-      }~
-      delete {
-        parameter("del_id") { del_id =>
-          println("-> Photo: DELETE request received for id = " + del_id)
-          if(photoMap.contains(del_id)) {
-            var i = 0
-            val OCid = photoMap(del_id).OCid 
-            var comments = objectCommentsMap(OCid).comments
-            var size = comments.size
-            if (objectCommentsMap.contains(OCid)) {
-              for(j<-0 until size) {
-                if(commentMap.contains(comments(j)))
-                  commentMap.remove(comments(j))
-              }
-              objectCommentsMap.remove(OCid)
-            }
-            photoMap.remove(del_id)
-            //println("-> Photo with id = " + del_id + " was deleted!")
-            complete("Photo with id = " + del_id + " was deleted!")
-          } else {
-            println("-> Photo with id = " + del_id + " was not found")
-            complete(StatusCodes.NotFound)
           }
         }
-      }
     }~
     pathPrefix("Status") {
       pathEnd {
@@ -504,7 +498,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   numOC += 1;
                   val OC = new ObjectComments(numOC.toString, STATUS, numstatus.toString, Array(""))
                   objectCommentsMap(numOC.toString) = OC
-                  println("-> User " + status.from + ": Status" + numstatus.toString + " added to objectCommentsMap")
+                  println("-> User " + status.from + ": Status " + numstatus.toString + " added to objectCommentsMap")
                 }
                 var newStatus = new Status(auth, (numstatus).toString,
                   format.format(new java.util.Date()),
@@ -513,7 +507,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   numOC.toString(), status.encKey)
                 statusMap(numstatus.toString) = newStatus
                 //println("-> Status" + status.from + ":Status Changed= " + status.message) 
-                complete("-> Status" + status.from + ": Status Changed= " + status.message)
+                complete("-> Status" + status.from + ": Status Changed = " + status.message)
               }
               } else {
                 //Update a status
