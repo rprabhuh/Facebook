@@ -75,13 +75,26 @@ trait GraphAPI extends HttpService with ActorLogging {
     pathPrefix("Album") {
       pathEnd {
         get {
-          parameter("id") { id =>
-            println("-> ALBUM: GET request received for id " + id)
-            if(albumMap.contains(id)){
-              complete {albumMap(id)}
-            } else{
-              // Error description in album.description
-              println("-> The requested album with id " + id + " cannot be found.")
+          entity(as[GetRequest]) { album =>
+            println("-> ALBUM: GET request received for id " + album.id)
+            var from = album.from
+            if(profileMap.contains(from)) {
+              var auth = shait(album.auth)
+              if(auth != profileMap(from).auth) {
+                  println("-> Permission Denied. Can't access album " + album.id)
+                  complete(StatusCodes.NotFound)
+
+              } else {
+                if(albumMap.contains(album.id)){
+                  complete {albumMap(album.id)}
+                } else{
+                  // Error description in album.description
+                  println("-> The requested album with id " + album.id + " cannot be found.")
+                  complete(StatusCodes.NotFound)
+                }
+              }
+            } else {
+              println("-> The requested album with id " + album.id + " cannot be found.")
               complete(StatusCodes.NotFound)
             }
           }
@@ -261,11 +274,22 @@ trait GraphAPI extends HttpService with ActorLogging {
     } ~
     pathPrefix("Comment") {
       get {
-        parameter("id") { id =>
-          if (objectCommentsMap.contains(id)) {
-            complete(objectCommentsMap(id))
+        entity(as[GetRequest]) { comment =>
+          val from = comment.from
+          if(profileMap.contains(from)) {
+            val auth = shait(comment.auth)
+            if(profileMap(from).auth != auth) {
+                println("-> Comment with id " + comment.id + " Not found")
+                complete(StatusCodes.NotFound)
+            } else { 
+              if (objectCommentsMap.contains(comment.id)) {
+                complete(objectCommentsMap(comment.id))
+              } else {
+                println("-> Comment with id " +comment.id + " Not found")
+                complete(StatusCodes.NotFound)
+              }
+            }
           } else {
-            println("-> Comment with id " + id + " Not found")
             complete(StatusCodes.NotFound)
           }
         }
@@ -285,13 +309,26 @@ trait GraphAPI extends HttpService with ActorLogging {
     } ~
     pathPrefix("Page") {
       get {
-        parameter("id") { id =>
-          println("-> PAGE: GET request received for id " + id)
-          if(pageMap.contains(id)) {
-            complete {pageMap(id)}
+        entity(as[GetRequest]) { page =>
+          var from = page.from
+          if(profileMap.contains(from)) {
+            var auth = shait(page.auth)
+            if(auth != profileMap(from).auth) {
+              println("-> Couldn't retrieve Page with id " + page.id + ". Authentication Issue ")
+              complete(StatusCodes.NotFound)
+            } else {
+              println("-> PAGE: GET request received for id " + page.id)
+              if(pageMap.contains(page.id)) {
+                complete {pageMap(page.id)}
+              } else {
+                println("-> Page with id " + page.id + " not found")
+                complete(StatusCodes.NotFound)
+              }
+            }
           } else {
-            println("-> Page with id " + id + " not found")
-            complete(StatusCodes.NotFound)
+              println("-> Couldn't retrieve Page with id " + page.id + ". Authentication Issue ")
+              complete(StatusCodes.NotFound)
+
           }
         }
       } ~
@@ -386,14 +423,26 @@ trait GraphAPI extends HttpService with ActorLogging {
     } ~
     pathPrefix("Photo") {
       get {
-        parameter("id") { id =>
-          println("-> GET request received for id " + id)
-          if(photoMap.contains(id)) {
-            complete {photoMap(id)}
-          } else {
-            // Error description in photo.name
-          println("-> Photo with id " + id + " cannot be found.")
-          complete(StatusCodes.NotFound)
+        entity(as[GetRequest]) { photo =>
+          var from = photo.from
+          if(profileMap.contains(from)) {
+            var auth = shait(photo.auth)
+            if(auth != profileMap(from).auth) {
+                println("-> Cannot access Photo with id " +photo.id+ ". Authentication Failure")
+                complete(StatusCodes.NotFound)
+            } else { 
+              println("-> GET request received for id " + photo.id)
+              if(photoMap.contains(photo.id)) {
+                complete {photoMap(photo.id)} 
+              } else {
+                // Error description in photo.name
+                println("-> Photo with id " + photo.id + " cannot be found.")
+                complete(StatusCodes.NotFound)
+              }
+            }
+           } else {//else for profileMap.contains
+              println("-> Photo with id " + photo.id + " cannot be found.")
+              complete(StatusCodes.NotFound)
           }
         }
       }~
@@ -473,12 +522,24 @@ trait GraphAPI extends HttpService with ActorLogging {
     pathPrefix("Status") {
       pathEnd {
         get {
-          parameter("id") { id =>
+          entity(as[GetRequest]) { status =>
             //println("-> STATUS: GET request received for id " + id)
-            if(statusMap.contains(id)) {
-              complete {statusMap(id)}
-            } else {
-              println("-> Status with id " + id + " was not found")
+            var from = status.from
+            if(profileMap.contains(from)) {
+              var auth = shait(status.auth)
+              if(auth != profileMap(from).auth) {
+                  println("-> Could not access status with id " + status.id + ". Authentication issue")
+                  complete(StatusCodes.NotFound)
+              } else {
+                if(statusMap.contains(status.id)) {
+                  complete {statusMap(status.id)}
+                } else {
+                  println("-> Status with id " + status.id + " was not found")
+                  complete(StatusCodes.NotFound)
+                }
+              }
+            } else {// ProfileMap.contains
+                  println("-> Could not access status with id " + status.id + ". Authentication issue")
               complete(StatusCodes.NotFound)
             }
           }
@@ -596,14 +657,31 @@ trait GraphAPI extends HttpService with ActorLogging {
     pathPrefix("Profile") {
       pathEnd {
         get {
-          parameter("id") { id =>
-            //println("-> PROFILE: GET request received for id " + id)
-            if(profileMap.contains(id)) {
-              complete {profileMap(id)}
+          entity(as[GetRequest]) { profile =>
+            val from = profile.from
+            if(profileMap.contains(from)) {
+              val auth = shait(profile.auth)
+              if(profileMap(from).auth != auth) {
+                println("-> Comment with id " + profile.id + " Not found")
+                complete(StatusCodes.NotFound)
+              } else { 
+                if (objectCommentsMap.contains(profile.id)) {
+                  //println("-> PROFILE: GET request received for id " + id)
+                  if(profileMap.contains(profile.id)) {
+                    complete {profileMap(profile.id)}
+                  } else {
+                    // Error in profile.bio
+                    println("-> Profile with id " + profile.id + " was not found")
+                    complete(StatusCodes.NotFound)
+                  }
+                } else {
+                  println("-> Profile with id " + profile.id + " was not found")
+                  complete(StatusCodes.NotFound) 
+                }
+              }
             } else {
-              // Error in profile.bio
-              println("-> Profile with id " + id + " was not found")
-              complete(StatusCodes.NotFound)
+              println("-> Profile with id " + profile.id + " was not found")
+              complete(StatusCodes.NotFound) 
             }
           }
         } ~

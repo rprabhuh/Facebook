@@ -127,6 +127,18 @@ case class FriendReqest(
   toid: String
 )
 
+case class GetRequest(
+  var auth: String,
+  var from: String,
+  var id: String
+)
+
+case class DeleteRequest(
+  var auth: String,
+  var from: String,
+  var del_id: String
+)
+
 object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
     implicit val albumFormat = jsonFormat15(Album)
@@ -138,4 +150,6 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val commentFormat = jsonFormat9(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat3(FriendReqest.apply)
     implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)
+    implicit val getRequestFormat = jsonFormat3(GetRequest.apply)
+    implicit val deleteRequestFormat = jsonFormat3(DeleteRequest.apply)
 }
