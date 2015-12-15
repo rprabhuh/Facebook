@@ -82,12 +82,18 @@ trait GraphAPI extends HttpService with ActorLogging {
               var auth = shait(album.auth)
               if(auth != profileMap(from).auth) {
                   println("-> Permission Denied. Can't access album " + album.id)
-                  complete(StatusCodes.NotFound)
+                  complete(StatusCodes.Unauthorized)
 
               } else {
                 if(albumMap.contains(album.id)){
-                  complete {albumMap(album.id)}
-                } else{
+                  if(albumMap(album.id).from == album.from) {
+                    complete {albumMap(album.id)}
+                  } else {
+                    println("-> The requested album with id " + album.id + " cannot be found.")
+                    complete(StatusCodes.Unauthorized)
+
+                  }
+                  } else{
                   // Error description in album.description
                   println("-> The requested album with id " + album.id + " cannot be found.")
                   complete(StatusCodes.NotFound)
@@ -95,7 +101,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               }
             } else {
               println("-> The requested album with id " + album.id + " cannot be found.")
-              complete(StatusCodes.NotFound)
+              complete(StatusCodes.Unauthorized)
             }
           }
         } ~
@@ -106,8 +112,9 @@ trait GraphAPI extends HttpService with ActorLogging {
               if(profileMap.contains(from)) {
                 var auth = shait(album.auth)
                 if(auth != profileMap(from).auth) {
-                println(" -> " + album.auth + " is not allowed to create an album")
-                complete(album.auth + " is not allowed to create an album")
+                println(" -> " + album.from+ " is not allowed to create an album")
+                complete(StatusCodes.Unauthorized)
+                //complete(album.from + " is not allowed to create an album")
               } else {
                 numalbums +=1
                 // Add to objectCommentsMap
@@ -129,17 +136,18 @@ trait GraphAPI extends HttpService with ActorLogging {
                 complete("User " + album.from + ": Album created with ID = " + newAlbum.id)
               }
               } else {
-                complete(album.auth + " is not allowed to create an album")
+                println(album.from + " is not allowed to create an album")
+                complete(StatusCodes.Unauthorized)
               }
 
               } else {
                 // Update an existing album
                 if(albumMap.contains(album.id)) {
                   var from = album.from
-                  var auth = shait(profileMap(from).auth)
-                  if(auth != album.auth) {
+                  var auth = shait(album.auth)
+                  if(auth != profileMap(from).auth) {
                     println(album.auth + " is not allowed to update album " + album.id)
-                    complete(album.auth + " is not allowed to update album " + album.id)
+                    complete(StatusCodes.Unauthorized)
                   } else { 
                     var A = album
                     A.OCid = albumMap(album.id).OCid
@@ -315,7 +323,7 @@ trait GraphAPI extends HttpService with ActorLogging {
             var auth = shait(page.auth)
             if(auth != profileMap(from).auth) {
               println("-> Couldn't retrieve Page with id " + page.id + ". Authentication Issue ")
-              complete(StatusCodes.NotFound)
+              complete(StatusCodes.Unauthorized)
             } else {
               println("-> PAGE: GET request received for id " + page.id)
               if(pageMap.contains(page.id)) {
@@ -336,6 +344,7 @@ trait GraphAPI extends HttpService with ActorLogging {
         entity(as[Page]) { page =>
           if (page.id == "null") {
             var from = page.from
+
             if(profileMap.contains(from)) { 
               var auth = shait(page.auth)
               if(auth != profileMap(from).auth) {
@@ -386,7 +395,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   complete("-> Page" + page.id + " updated!")
                 }
               } else {
-                complete(page.from + " is not allowed to create this page")
+                complete(page.from + " is not allowed to edit this page")
               }
             } else {
                 println("-> Page with id " + page.id + " does not exist!")
@@ -450,14 +459,21 @@ trait GraphAPI extends HttpService with ActorLogging {
           entity(as[Photo]) { photo =>
           println("-> Got a post for photos")
             if(photo.id == "null") {
-              if(photo.auth != photo.from) {
-                //println(photo.auth + " is not allowed to post this picture")
-                complete(photo.auth+ " is not allowed to post this picture")
-              } else {
-                if(albumMap.contains(photo.album)) {
-                  if(albumMap(photo.album).from != photo.auth) {
+              val from = photo.from
+              if(profileMap.contains(from)) {
+                val auth = shait(photo.auth)
+                
+              if(auth != profileMap(from).auth) {
+                println(photo.from + " is not allowed to post this picture")
+                complete(StatusCodes.Unauthorized)
+              } else {//This is a valid User and is who (s)he claims to be
+                if(albumMap.contains(photo.album)) {//Existing album
+                  if(from != albumMap(photo.album).from) {// Album doesn't belong to the User
+                    println(from)
+                    println(albumMap(photo.album).from)
                     //println(photo.auth+ " is not allowed to post photos to album" + photo.album)
-                    complete(photo.auth+ " is not allowed to post photos to album" + photo.album)
+                    println(photo.from + " is not allowed to post photos to album" + photo.album)
+                    complete(StatusCodes.Unauthorized)
                   } else {
 
                     numphotos += 1
@@ -487,6 +503,11 @@ trait GraphAPI extends HttpService with ActorLogging {
                     //println("-> Couldn't upload photo to Album " + photo.album +". No such album")
                     complete("Couldn't upload photo to Album " + photo.album +". No such album")
                   }
+              }
+              } else {
+                println(photo.from + " is not allowed to post this picture")
+                complete(StatusCodes.Unauthorized)
+
               }
               } else {
                 println("-> Photo with id " + photo.id + " was not found")
@@ -529,7 +550,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               var auth = shait(status.auth)
               if(auth != profileMap(from).auth) {
                   println("-> Could not access status with id " + status.id + ". Authentication issue")
-                  complete(StatusCodes.NotFound)
+                  complete(StatusCodes.Unauthorized)
               } else {
                 if(statusMap.contains(status.id)) {
                   complete {statusMap(status.id)}
@@ -573,7 +594,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               } else {
                 //Update a status
                 if(statusMap.contains(status.id)) {
-                  if(shait(statusMap(status.id).auth) != status.auth) {
+                  if(shait(status.auth) != statusMap(status.id).auth) {
                     println(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
                     complete(status.auth + " is not allowed to update statuses of " +statusMap(status.id).from)
                   } else {
@@ -663,7 +684,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               val auth = shait(profile.auth)
               if(profileMap(from).auth != auth) {
                 println("-> Comment with id " + profile.id + " Not found")
-                complete(StatusCodes.NotFound)
+                complete(StatusCodes.Unauthorized)
               } else { 
                 if (objectCommentsMap.contains(profile.id)) {
                   //println("-> PROFILE: GET request received for id " + id)
@@ -681,7 +702,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               }
             } else {
               println("-> Profile with id " + profile.id + " was not found")
-              complete(StatusCodes.NotFound) 
+              complete(StatusCodes.Unauthorized) 
             }
           }
         } ~
@@ -735,10 +756,11 @@ trait GraphAPI extends HttpService with ActorLogging {
           //Add from
           var from = fr.fromid
           if(profileMap.contains(from)) {
-            var auth = shait(profileMap(from).auth) 
-          if(auth != fr.auth) { 
+            var auth = shait(fr.auth)
+          if(auth != profileMap(from).auth) { 
             //println(fr.auth + " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
-            complete(fr.auth+ " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
+            println(fr.fromid + " is not allowed to make friendship between " + fr.fromid +" and " + fr.toid)
+            complete(StatusCodes.Unauthorized)
           } else {
 
           	// Flip a coin to decide if the friend request shoule be accepted

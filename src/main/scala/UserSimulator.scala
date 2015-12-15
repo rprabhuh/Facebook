@@ -236,6 +236,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         response onComplete {
         	case Success(crAlbum) =>
+              println("Successfully Created album")
         		println(crAlbum.entity.asString)
 
         	case Failure(error) =>
@@ -247,13 +248,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting an Album with id = " + id)
 
+        val request = new GetRequest(myAuthString, self.path.name, id)
         val pipeline: HttpRequest => Future[Album] = (
           sendReceive
             ~> unmarshal[Album]
           )
-        val response: Future[Album] = pipeline(Get("http://localhost:8080/Album?id=" + id))
+        val response: Future[Album] = pipeline(Get("http://localhost:8080/Album",request))
         response onComplete {
         	case Success(album) =>
+                println("Printed Once")
         		println("[ALBUM] Retrieved:")
         		println("id = " + album.id + "\n" +
             	"count = " + album.count + "\n" +
@@ -352,7 +355,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           sendReceive
             ~> unmarshal[Photo]
           )
-        val response: Future[Photo] = pipeline(Get("http://localhost:8080/Photo?id=" + id))
+        val request = new GetRequest(myAuthString, self.path.name, id)
+        val response: Future[Photo] = pipeline(Get("http://localhost:8080/Photo",request))
         response onComplete {
         	case Success(photo) =>
                 println("GET PHOTO SUCCESS CASE")
@@ -455,12 +459,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 	case GetProfile(id) =>
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting Profile = " + id)
-
+        val request = new GetRequest(myAuthString, self.path.name, id)
+        
         val pipeline: HttpRequest => Future[Profile] = (
           sendReceive
             ~> unmarshal[Profile]
           )
-        val response: Future[Profile] = pipeline(Get("http://localhost:8080/Profile?id=" + id))
+        val response: Future[Profile] = pipeline(Get("http://localhost:8080/Profile",request))
         response onComplete {
         	case Success(profile) =>
               println("GET PROFILE SUCCESS CASE")
@@ -632,12 +637,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
         println("User " + self.path.name + " getting status = " + id)
 
+        val request = new GetRequest(myAuthString, self.path.name, id)
         val pipeline: HttpRequest => Future[Status] = (
           sendReceive
             ~> unmarshal[Status]
           )
 
-        val response: Future[Status] = pipeline(Get("http://localhost:8080/Status?id=" + id))
+        val response: Future[Status] = pipeline(Get("http://localhost:8080/Status", request))
         response onComplete {
           case Success(status) =>
               println("GET STATUS SUCCESS CASE")
@@ -701,7 +707,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 " --> encrypted to " + new String(encStatus.data))
 
     import FBJsonProtocol._
-    var S = new Status(myAuthString, id, "now", self.path.name, "location",
+    var S = new Status("myAuthString", id, "now", self.path.name, "location",
              new String(encStatus.data),
             	"time again", "-1", encStatus.key)
 
@@ -730,7 +736,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         var encEmail = rsaencrypt("email@organization.com".getBytes, AESStringKey)
         
         println("User " + self.path.name + " creating a Page with encrypted email " + encEmail.data)
-        
+        println("Sending CreatePage Request")
         import FBJsonProtocol._
         var P = new Page(myAuthString, "null", "about", true, "cover", "description",
                 new String(encEmail.data),
@@ -740,6 +746,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
         response onComplete {
         	case Success(crPage) =>
+              println("Page created successfully")
         		println(crPage.entity.asString)
 
         	case Failure(error) =>
@@ -750,11 +757,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
         println("User " + self.path.name + " getting a Page with id = " + id)
 
+        val request = new GetRequest(myAuthString, self.path.name, id)
         val pipeline: HttpRequest => Future[Page] = (
           sendReceive
             ~> unmarshal[Page]
           )
-        val response: Future[Page] = pipeline(Get("http://localhost:8080/Page?id=" + id))
+        val response: Future[Page] = pipeline(Get("http://localhost:8080/Page",request ))
         response onComplete {
         	case Success(page) =>
               println("GET PAGE SUCCESS CASE")
@@ -805,7 +813,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         val P = new Page(myAuthString, id, "about", true, "cover", "description", 
                 new String(encEmail.data),
-                12, "link", "location", "from", "name", "parent_page",
+                12, "link", "location", self.path.name, "name", "parent_page",
                 Array("likes"), Array("members"), "-1", "TODO: enc.key".getBytes)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
