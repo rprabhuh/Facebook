@@ -163,32 +163,39 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         } ~
         delete {
-          parameter("del_id") { del_id =>
-            println("-> ALBUM: DELETE request received for del_id = " + del_id)
-            if(albumMap.contains(del_id)) {
+          entity(as[DeleteRequest]) { album =>
+            println("-> ALBUM: DELETE request received for del_id = " + album.del_id)
+            if(albumMap.contains(album.del_id)) {
               //Delete all the photos in the album
-              var tempObj = albumMap(del_id)
-              var i = 0
-              var j = 0
-              var size = tempObj.photos.size
-              for (i <- 0 until size) {
-                if(photoMap.contains(tempObj.photos(i))) {
-                  val OCid = photoMap(tempObj.photos(i)).OCid 
-                  var comments = objectCommentsMap(OCid).comments
-                  var size2 = comments.size
-                  if (objectCommentsMap.contains(OCid)) {
-                    for(j<-0 until size2) {
-                      if(commentMap.contains(comments(j)))
-                        commentMap.remove(comments(j))
+              val from = album.from
+              if(profileMap.contains(from)) {
+                val auth = shait(album.auth)
+                if(auth != profileMap(from).auth) {
+                  println("Unauthorized delete request")
+                  complete(StatusCodes.Unauthorized)
+                } else {
+                  var tempObj = albumMap(album.del_id)
+                  var i = 0
+                  var j = 0
+                  var size = tempObj.photos.size
+                  for (i <- 0 until size) {
+                    if(photoMap.contains(tempObj.photos(i))) {
+                      val OCid = photoMap(tempObj.photos(i)).OCid 
+                      var comments = objectCommentsMap(OCid).comments
+                      var size2 = comments.size
+                      if (objectCommentsMap.contains(OCid)) {
+                        for(j<-0 until size2) {
+                          if(commentMap.contains(comments(j)))
+                            commentMap.remove(comments(j))
+                        }
+                        objectCommentsMap.remove(OCid)
+                      }
+                      photoMap.remove(tempObj.photos(i))
                     }
-                    objectCommentsMap.remove(OCid)
                   }
-                  photoMap.remove(tempObj.photos(i))
-                }
-              }
 
               // TODO: Delete all the comments on this album
-              val OCid = albumMap(del_id).OCid
+              val OCid = albumMap(album.del_id).OCid
               var comments = objectCommentsMap(OCid).comments
               size = comments.size
               if (objectCommentsMap.contains(OCid)) {
@@ -199,13 +206,18 @@ trait GraphAPI extends HttpService with ActorLogging {
                 objectCommentsMap.remove(OCid)
               }
 
-              albumMap.remove(del_id)
+              albumMap.remove(album.del_id)
 
               //println("-> Album with id = " + del_id + " was deleted!")
-              complete("Album with id = " + del_id + " was deleted!")
+              complete("Album with id = " + album.del_id + " was deleted!")
+                }
+            }else {
+              println("Unauthorized delete request")
+              complete(StatusCodes.Unauthorized)
+            } 
             }
             else 
-              println("-> Album with id = " + del_id + " was not found")
+              println("-> Album with id = " + album.del_id + " was not found")
               complete(StatusCodes.NotFound)
           }
         } 		
@@ -405,26 +417,37 @@ trait GraphAPI extends HttpService with ActorLogging {
         }
       } ~
       delete {
-        parameter("del_id") { del_id =>
-          println("-> PAGE: DELETE request received for id = " + del_id)
-          if(pageMap.contains(del_id)) {
-            // TODO: Delete all the comments on this page
-            val OCid = pageMap(del_id).OCid
-            var comments = objectCommentsMap(OCid).comments
-            var size = comments.size
-            if(objectCommentsMap.contains(OCid)) {
-              for(i <- 0 until size) {
-                if(commentMap.contains(comments(i)))
-                  commentMap.remove(comments(i))
+        entity(as[DeleteRequest]) { page =>
+          println("-> PAGE: DELETE request received for del_id = " + page.del_id)
+          if(pageMap.contains(page.del_id)) {
+            if(profileMap.contains(page.from)) {
+              val auth = shait(page.auth)
+              if(auth != profileMap(page.from).auth){
+                println("-> Page with id = " + page.del_id + " could not be deleted.")
+                complete(StatusCodes.Unauthorized)
+              } else { 
+                // TODO: Delete all the comments on this page
+                val OCid = pageMap(page.del_id).OCid
+                var comments = objectCommentsMap(OCid).comments
+                var size = comments.size
+                if(objectCommentsMap.contains(OCid)) {
+                  for(i <- 0 until size) {
+                    if(commentMap.contains(comments(i)))
+                      commentMap.remove(comments(i))
+                  }
+                  objectCommentsMap.remove(OCid)
+                }
+                pageMap.remove(page.del_id)
+                //println("-> Page with id = " + del_id + " was deleted!")
+                complete("Page with id = " + page.del_id + " was deleted!")
               }
-              objectCommentsMap.remove(OCid)
+            }else {
+            println("-> Page with id = " + page.del_id + " could not be deleted.")
+            complete(StatusCodes.Unauthorized)
+
             }
-            pageMap.remove(del_id)
-            //println("-> Page with id = " + del_id + " was deleted!")
-            complete("Page with id = " + del_id + " was deleted!")
-          }
-          else {
-            println("-> Page with id = " + del_id + " was not found")
+          } else {
+            println("-> Page with id = " + page.del_id + " was not found")
             complete(StatusCodes.NotFound)
           }
         }
@@ -516,27 +539,39 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         }~
         delete {
-          parameter("del_id") { del_id =>
-            println("-> Photo: DELETE request received for id = " + del_id)
-            if(photoMap.contains(del_id)) {
-              var i = 0
-              val OCid = photoMap(del_id).OCid 
-              var comments = objectCommentsMap(OCid).comments
-              var size = comments.size
-              if (objectCommentsMap.contains(OCid)) {
-                for(j<-0 until size) {
-                  if(commentMap.contains(comments(j)))
-                    commentMap.remove(comments(j))
+          entity(as[DeleteRequest]) { photo =>
+            println("-> Photo: DELETE request received for id = " + photo.del_id)
+            val from = photo.from
+            if(profileMap.contains(from)) {
+              val auth = shait(photo.auth)
+              if(auth != profileMap(from).auth) {
+                println("-> Photo with id " + photo.del_id + " was not found")
+                complete(StatusCodes.NotFound)
+              } else { 
+                if(photoMap.contains(photo.del_id)) {
+                  var i = 0
+                  val OCid = photoMap(photo.del_id).OCid 
+                  var comments = objectCommentsMap(OCid).comments
+                  var size = comments.size
+                  if (objectCommentsMap.contains(OCid)) {
+                    for(j<-0 until size) {
+                      if(commentMap.contains(comments(j)))
+                        commentMap.remove(comments(j))
+                    }
+                    objectCommentsMap.remove(OCid)
+                  }
+                  photoMap.remove(photo.del_id)
+                  //println("-> Photo with id = " + del_id + " was deleted!")
+                  complete("Photo with id = " + photo.del_id + " was deleted!")
+                } else {
+                  println("-> Photo with id " + photo.del_id + " was not found")
+                  complete(StatusCodes.NotFound)
                 }
-                objectCommentsMap.remove(OCid)
               }
-              photoMap.remove(del_id)
-              //println("-> Photo with id = " + del_id + " was deleted!")
-              complete("Photo with id = " + del_id + " was deleted!")
-            } else {
-              println("-> Photo with id " + del_id + " was not found")
-              complete(StatusCodes.NotFound)
-            }
+              } else {
+                println("-> Photo with id " + photo.del_id + " was not found")
+                complete(StatusCodes.Unauthorized)
+              }
           }
         }
     }~
@@ -612,27 +647,39 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         } ~
         delete {
-          parameter("del_id") { del_id =>
-            //println("-> Status: DELETE request received for del_id = " + del_id)
-            if(statusMap.contains(del_id)) {
-              val OCid = statusMap(del_id).OCid
-              if(objectCommentsMap.contains(OCid)) {
-                var comments = objectCommentsMap(OCid).comments
-                var size = comments.size
-                if (objectCommentsMap.contains(OCid)) {
-                  for(j<-0 until size) {
-                    if(commentMap.contains(comments(j)))
-                      commentMap.remove(comments(j))
-                  }
-                  objectCommentsMap.remove(OCid)
-                } 
-              }
-              statusMap.remove(del_id)
-              //println("-> Status " + del_id + " deleted")
-              complete("Status " + del_id + " deleted")
-            } else {
-                println("-> Status with id " + del_id + " was not found.")
+          entity(as[DeleteRequest]) { status =>
+            val from = status.from
+            if(profileMap.contains(from)) {
+              val auth = shait(status.auth)
+              if(auth != profileMap(from).auth) {
+                println("-> Status with id " + status.del_id + " was not found.")
                 complete(StatusCodes.NotFound)
+              } else { 
+                //println("-> Status: DELETE request received for del_id = " + del_id)
+                if(statusMap.contains(status.del_id)) {
+                  val OCid = statusMap(status.del_id).OCid
+                  if(objectCommentsMap.contains(OCid)) {
+                    var comments = objectCommentsMap(OCid).comments
+                    var size = comments.size
+                    if (objectCommentsMap.contains(OCid)) {
+                      for(j<-0 until size) {
+                        if(commentMap.contains(comments(j)))
+                          commentMap.remove(comments(j)) 
+                      }
+                      objectCommentsMap.remove(OCid)
+                    } 
+                  }
+                  statusMap.remove(status.del_id)
+                  //println("-> Status " + del_id + " deleted")
+                  complete("Status " + status.del_id + " deleted")
+                } else {
+                  println("-> Status with id " + status.del_id + " was not found.")
+                  complete(StatusCodes.NotFound)
+                }
+              }
+            } else {
+                println("-> Status with id " + status.del_id + " was not found.")
+                complete(StatusCodes.Unauthorized)
             }
           }
         }
@@ -736,16 +783,28 @@ trait GraphAPI extends HttpService with ActorLogging {
           }
         } ~
         delete {
-          parameter("del_id") { del_id =>
-            //println("-> USER: DELETE request received for id = " + del_id)
-            if(profileMap.contains(del_id)) {
-              profileMap.remove(del_id)
-              //println("-> Profile with id = " + del_id + " was deleted!")
-              complete("Profile with id = " + del_id + " was deleted!")
-            } else {
-              println("-> Profile with id = " + del_id + " was not found")
-              complete(StatusCodes.NotFound)
-            }
+          entity(as[DeleteRequest]) { profile =>
+            val from = profile.from
+            if(profileMap.contains(from)) {
+              val auth = shait(profile.auth)
+              if(auth != profileMap(from).auth || profile.del_id != profile.from) {
+                println("-> Profile with id = " + profile.del_id + " was not found")
+                complete(StatusCodes.Unauthorized)
+              } else { 
+                //println("-> USER: DELETE request received for id = " + del_id)
+                if(profileMap.contains(profile.del_id)) {
+                  profileMap.remove(profile.del_id)
+                  //println("-> Profile with id = " + del_id + " was deleted!")
+                  complete("Profile with id = " + profile.del_id + " was deleted!")
+                } else {
+                  println("-> Profile with id = " + profile.del_id + " was not found")
+                  complete(StatusCodes.NotFound)
+                }
+             }
+           } else {
+             println("-> Profile with id = " + profile.del_id + " was not found")
+             complete(StatusCodes.Unauthorized)
+           }
           }
         }
       }

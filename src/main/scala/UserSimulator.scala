@@ -305,7 +305,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
     case DeleteAlbum(id) =>
     	println("User " + self.path.name + " deleting Album " + id)
-		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album?del_id=" + id))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album",request))
 		  response onComplete {
         	case Success(deAlbum) =>
         		println(deAlbum.entity.asString)
@@ -404,7 +406,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
     case DeletePhoto(id) => 
 		  println("User " + self.path.name + " deleting photo " + id)
-		  val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo?del_id=" + id))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo",request))
 		  response onComplete {
         	case Success(dePhoto) =>
         		println(dePhoto.entity.asString)
@@ -624,7 +628,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   case DeleteComment(id) => 
       println("User " + self.path.name + " deleting comment " + id)
-      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment?del_id=" + id))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment",request))
       response onComplete {
         	case Success(deProfile) =>
         		println(deProfile.entity.asString)
@@ -722,7 +728,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   case DeleteStatus(id) => 
       println("User " + self.path.name + " deleting status " + id)
-      val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status?del_id=" + id))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status",request))
       response onComplete {
         	case Success(deStatus) =>
         		println(deStatus.entity.asString)
@@ -827,7 +835,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
     case DeletePage(id) =>
         println("User " + self.path.name + " deleting Page " + id)
-        val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Page?del_id=" + id))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, id)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Page",request))
         response onComplete {
         	case Success(dePage) =>
         		println(dePage.entity.asString)
