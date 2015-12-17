@@ -165,7 +165,9 @@ trait GraphAPI extends HttpService with ActorLogging {
         delete {
           entity(as[DeleteRequest]) { album =>
             println("-> ALBUM: DELETE request received for del_id = " + album.del_id)
+            println(albumMap.contains(album.del_id))
             if(albumMap.contains(album.del_id)) {
+              println("Entered the if")
               //Delete all the photos in the album
               val from = album.from
               if(profileMap.contains(from)) {
@@ -215,10 +217,10 @@ trait GraphAPI extends HttpService with ActorLogging {
               println("Unauthorized delete request")
               complete(StatusCodes.Unauthorized)
             } 
-            }
-            else 
+            } else {
               println("-> Album with id = " + album.del_id + " was not found")
               complete(StatusCodes.NotFound)
+            }
           }
         } 		
       } ~

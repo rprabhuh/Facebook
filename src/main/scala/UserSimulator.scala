@@ -443,7 +443,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
               new String(encBDay.data) + " and encrypted email " + new String(encEmail.data))
       
       import FBJsonProtocol._
-      val P = new Profile (self.path.name, self.path.name, "bio",
+      val P = new Profile (myAuthString, self.path.name, "bio",
           new String(encBDay.data), new String(encEmail.data),
 			    "first_name", "gender", "hometown",
 			    Array("interested_in"), Array("languages"), "last_name", "link",
@@ -548,7 +548,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
 	case DeleteProfile =>
 		println("User " + self.path.name + " deleting Profile")
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile?del_id=" + self.path.name))
+        import FBJsonProtocol._
+        val request = new DeleteRequest(myAuthString, self.path.name, self.path.name)
+		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile",request))
 		response onComplete {
         	case Success(deProfile) =>
         		println(deProfile.entity.asString)
