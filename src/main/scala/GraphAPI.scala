@@ -15,6 +15,7 @@ import akka.util.Timeout
 import akka.actor._
 
 import java.security.MessageDigest
+import java.security.SecureRandom
 
 object ObjectType extends Enumeration {
   type ObjectType = Value
@@ -762,14 +763,24 @@ trait GraphAPI extends HttpService with ActorLogging {
               var auth = shait(profile.auth)
               if(profileMap(profile.id).auth != auth) {
                 //println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
-                complete(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
+                println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
+                complete(StatusCodes.Unauthorized)
               } else {
                 profileMap(profile.id) = profile
                 //println("-> Profile with id " + profile.id + " updated!")
                 complete("Profile with id " + profile.id + " updated!")
               }
             } else {// Creating a user profile 
-              var uuid = java.util.UUID.randomUUID.toString
+              val random = new scala.util.Random(new java.security.SecureRandom())
+              
+              def randomString(alphabet: String)(n: Int): String = 
+                  Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
+
+              def randomAlphanumericString(n: Int) = 
+                  randomString("abcdefghijklmnopqrstuvwxyz0123456789")(n)
+              
+              var uuid = randomAlphanumericString(20)
+
               var digest = shait(uuid)
               val newProfile = new Profile(digest, profile.id, profile.bio, profile.birthday,
               profile.email, profile.first_name, profile.gender,
