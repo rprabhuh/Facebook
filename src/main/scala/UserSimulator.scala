@@ -136,7 +136,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   implicit val timeout = Timeout(5000)
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
   var future:Future[Any]= null
-
+  val url = "https://localhost:8080/"
 
   // ENCRYPT using the PRIVATE key
   def rsaencrypt(plaintext: Array[Byte], AESStringKey: String): Encrypted = {
@@ -231,9 +231,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         val A = new Album(myAuthString, "null", 0, "33", "12:23:12", "description: String",
                           self.path.name, "link: String", "location: String", "name: String",
-                          "place: String", Array("privacy: String"), "null", Array("cover_photo"),"-1")
+                          "place: String", Array(self.path.name,"1","2","3"), "null", Array("cover_photo"),"-1")
 
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
+        val response: Future[HttpResponse] = pipeline(Post(url + "Album", A))
         response onComplete {
         	case Success(crAlbum) =>
               println("Successfully Created album")
@@ -253,7 +253,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           sendReceive
             ~> unmarshal[Album]
           )
-        val response: Future[Album] = pipeline(Get("http://localhost:8080/Album",request))
+        val response: Future[Album] = pipeline(Get(url + "Album",request))
         response onComplete {
         	case Success(album) =>
                 println("Printed Once")
@@ -291,9 +291,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         var A = new Album(myAuthString, id, 12, "cover_photo", "time", "description: String",
           self.path.name, "link: String", "location: String", "name: String", "place: String",
-          Array("privacy: String"), "null", Array("cover_photo"), "1" )
+          Array(self.path.name,"1","2","3"), "null", Array("cover_photo"), "1" )
 
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
+        val response: Future[HttpResponse] = pipeline(Post(url + "Album", A))
         response onComplete {
         	case Success(upAlbum) =>
         		println(upAlbum.entity.asString)
@@ -307,7 +307,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	println("User " + self.path.name + " deleting Album " + id)
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Album",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Album",request))
 		  response onComplete {
         	case Success(deAlbum) =>
         		println(deAlbum.entity.asString)
@@ -337,9 +337,10 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
         var A = new Photo(myAuthString, "null", album_id, "created_time", self.path.name, enc.data,
-                          "link", id, "updated_time", "place", list, list, "-1", enc.key, Array("1", "2","3"))
+                          "link", id, "updated_time", "place", list, list, "-1", enc.key,
+                          Array(self.path.name, "1", "2","3"))
 
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
+        val response: Future[HttpResponse] = pipeline(Post(url + "Photo", A))
         response onComplete {
         	case Success(upPhoto) =>
         		println(upPhoto.entity.asString)
@@ -358,7 +359,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             ~> unmarshal[Photo]
           )
         val request = new GetRequest(myAuthString, self.path.name, id)
-        val response: Future[Photo] = pipeline(Get("http://localhost:8080/Photo",request))
+        val response: Future[Photo] = pipeline(Get(url + "Photo",request))
         response onComplete {
         	case Success(photo) =>
                 println("GET PHOTO SUCCESS CASE")
@@ -408,7 +409,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		  println("User " + self.path.name + " deleting photo " + id)
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Photo",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Photo",request))
 		  response onComplete {
         	case Success(dePhoto) =>
         		println(dePhoto.entity.asString)
@@ -422,7 +423,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
         var A = new FriendReqest(myAuthString, self.path.name, id)
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/AddFriend", A))
+        val response: Future[HttpResponse] = pipeline(Post(url + "AddFriend", A))
         response onComplete {
         	case Success(addFr) =>
         		println(addFr.entity.asString)
@@ -448,9 +449,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			    "first_name", "gender", "hometown",
 			    Array("interested_in"), Array("languages"), "last_name", "link",
 			    "location", "middle_name", "relationship_status", "significant_other",
-          "updated_time", "website", "cover", encEmail.key, Array("1", "2", "3"))
+          "updated_time", "website", "cover", encEmail.key, Array(self.path.name,"1","2","3"))
 
-		  val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
+		  val response: Future[HttpResponse] = pipeline(Post(url + "Profile", P))
 		  response onComplete {
         	case Success(crProfile) =>
               myAuthString = crProfile.entity.asString
@@ -469,7 +470,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           sendReceive
             ~> unmarshal[Profile]
           )
-        val response: Future[Profile] = pipeline(Get("http://localhost:8080/Profile",request))
+        val response: Future[Profile] = pipeline(Get(url + "Profile",request))
         response onComplete {
         	case Success(profile) =>
               println("GET PROFILE SUCCESS CASE")
@@ -533,10 +534,10 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			new String(encEmail.data), "first_name", "gender", "hometown",
 			Array("interested_in"), Array("languages"), "last_name", "link",
 			"location", "middle_name", "relationship_status", "significant_other",
-      "updated_time", "website", "cover", encEmail.key, Array("1", "2", "3"))
+      "updated_time", "website", "cover", encEmail.key, Array(self.path.name,"1","2","3"))
 
 
-		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
+		val response: Future[HttpResponse] = pipeline(Post(url + "Profile", P))
 		response onComplete {
         	case Success(upProfile) =>
         		println(upProfile.entity.asString)
@@ -550,7 +551,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 		println("User " + self.path.name + " deleting Profile")
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, self.path.name)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Profile",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Profile",request))
 		response onComplete {
         	case Success(deProfile) =>
         		println(deProfile.entity.asString)
@@ -577,13 +578,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     var response: Future[HttpResponse] = null
     objType match {
       case ObjectType.ALBUM => 
-		    response = pipeline(Post("http://localhost:8080/Album/comment", C))
+		    response = pipeline(Post(url + "Album/comment", C))
 
       case ObjectType.PHOTO => 
-        response = pipeline(Post("http://localhost:8080/Photo/comment", C))
+        response = pipeline(Post(url + "Photo/comment", C))
 
       case ObjectType.PAGE => 
-        response = pipeline(Post("http://localhost:8080/Page/comment", C))
+        response = pipeline(Post(url + "Page/comment", C))
     }
     
 
@@ -611,13 +612,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	var response: Future[HttpResponse] = null
       objType match {
         case ObjectType.ALBUM => 
-          response = pipeline(Post("http://localhost:8080/Album/comment", C))
+          response = pipeline(Post(url + "Album/comment", C))
 
         case ObjectType.PHOTO => 
-          response = pipeline(Post("http://localhost:8080/Photo/comment", C))
+          response = pipeline(Post(url + "Photo/comment", C))
 
         case ObjectType.PAGE => 
-          response = pipeline(Post("http://localhost:8080/Page/comment", C))
+          response = pipeline(Post(url + "Page/comment", C))
       }
     	
       response onComplete {
@@ -632,7 +633,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
       println("User " + self.path.name + " deleting comment " + id)
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Comment",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Comment",request))
       response onComplete {
         	case Success(deProfile) =>
         		println(deProfile.entity.asString)
@@ -651,7 +652,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
             ~> unmarshal[Status]
           )
 
-        val response: Future[Status] = pipeline(Get("http://localhost:8080/Status", request))
+        val response: Future[Status] = pipeline(Get(url + "Status", request))
         response onComplete {
           case Success(status) =>
               println("GET STATUS SUCCESS CASE")
@@ -695,9 +696,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	import FBJsonProtocol._
     	var S = new Status(myAuthString, "null", "now", self.path.name, "location",
                     new String(encStatus.data),
-                  	"time again", "-1", encStatus.key, Array("1","2","3"))
+                  	"time again", "-1", encStatus.key, Array(self.path.name,"1","2","3"))
     	
-      val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))  
+      val response: Future[HttpResponse] = pipeline(Post(url + "Status", S))  
     	response onComplete {
         	case Success(crStatus) =>
         		println(crStatus.entity.asString)
@@ -717,9 +718,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     import FBJsonProtocol._
     var S = new Status(myAuthString, "null", "now", self.path.name, "location",
                     new String(encStatus.data),
-                  	"time again", "-1", encStatus.key, Array("1","2","3"))
+                  	"time again", "-1", encStatus.key, Array(self.path.name,"1","2","3"))
 
-    	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))
+    	val response: Future[HttpResponse] = pipeline(Post(url + "Status", S))
     	response onComplete {
         	case Success(upStatus) =>
         		println(upStatus.entity.asString)
@@ -732,7 +733,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
       println("User " + self.path.name + " deleting status " + id)
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Status",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Status",request))
       response onComplete {
         	case Success(deStatus) =>
         		println(deStatus.entity.asString)
@@ -751,9 +752,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         var P = new Page(myAuthString, "null", "about", true, "cover", "description",
                 new String(encEmail.data),
                 12, "link", "location", self.path.name, "name", "parent_page",
-                Array("likes"), Array("1","2","3"), "-1", encEmail.key)
+                Array("likes"), Array(self.path.name,"1","2","3"), "-1", encEmail.key)
 
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
+        val response: Future[HttpResponse] = pipeline(Post(url + "Page", P))
         response onComplete {
         	case Success(crPage) =>
               println("Page created successfully")
@@ -772,7 +773,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
           sendReceive
             ~> unmarshal[Page]
           )
-        val response: Future[Page] = pipeline(Get("http://localhost:8080/Page",request ))
+        val response: Future[Page] = pipeline(Get(url + "Page",request ))
         response onComplete {
         	case Success(page) =>
               println("GET PAGE SUCCESS CASE")
@@ -824,9 +825,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         val P = new Page(myAuthString, id, "about", true, "cover", "description", 
                 new String(encEmail.data),
                 12, "link", "location", self.path.name, "name", "parent_page",
-                Array("likes"), Array("members"), "-1", "TODO: enc.key".getBytes)
+                Array("likes"), Array(self.path.name,"1","2","3"), "-1", "TODO: enc.key".getBytes)
 
-        val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
+        val response: Future[HttpResponse] = pipeline(Post(url + "Page", P))
         response onComplete {
         	case Success(upPage) =>
         		println(upPage.entity.asString)
@@ -839,7 +840,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         println("User " + self.path.name + " deleting Page " + id)
         import FBJsonProtocol._
         val request = new DeleteRequest(myAuthString, self.path.name, id)
-		val response: Future[HttpResponse] = pipeline(Delete("http://localhost:8080/Page",request))
+		val response: Future[HttpResponse] = pipeline(Delete(url + "Page",request))
         response onComplete {
         	case Success(dePage) =>
         		println(dePage.entity.asString)

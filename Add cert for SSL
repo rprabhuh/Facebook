@@ -1,0 +1,14 @@
+keytool -genkey -alias dosfb -keyalg RSA -keypass "sanil123" -storepass "sanil123" keystore dosfb.jks
+
+keytool -export -alias dosfb -storepass "sanil123" -file server.cer -keystore dosfb.jks
+
+# Create .cer from jks
+keytool -export -alias "spray team" -storepass "" -file server.cer -keystore ssl-test-keystore.jks
+
+# keytool -import -v -trustcacerts -alias "spray team" -file server.cer -keystore cacerts.jks -keypass changeit
+
+# Verify contents
+openssl x509 -inform der -in cerfile.cer -noout -text
+
+# Take backup of $JAVA_HOME/lib/security/cacerts, and add .cer file to cacerts
+keytool -import -alias "spray team" -keystore cacerts -trustcacerts -file server.cer

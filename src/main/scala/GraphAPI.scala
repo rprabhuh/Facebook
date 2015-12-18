@@ -227,9 +227,9 @@ trait GraphAPI extends HttpService with ActorLogging {
         delete {
           entity(as[DeleteRequest]) { album =>
             println("-> ALBUM: DELETE request received for del_id = " + album.del_id)
-            println(albumMap.contains(album.del_id))
+            //println(albumMap.contains(album.del_id))
             if(albumMap.contains(album.del_id)) {
-              println("Entered the if")
+              //println("Entered the if")
               //Delete all the photos in the album
               val from = album.from
               if(profileMap.contains(from)) {
@@ -568,8 +568,8 @@ trait GraphAPI extends HttpService with ActorLogging {
               } else {//This is a valid User and is who (s)he claims to be
                 if(albumMap.contains(photo.album)) {//Existing album
                   if(from != albumMap(photo.album).from) {// Album doesn't belong to the User
-                    println(from)
-                    println(albumMap(photo.album).from)
+                    //println(from)
+                    //println(albumMap(photo.album).from)
                     //println(photo.auth+ " is not allowed to post photos to album" + photo.album)
                     println(photo.from + " is not allowed to post photos to album" + photo.album)
                     complete(StatusCodes.Unauthorized)
@@ -846,25 +846,29 @@ trait GraphAPI extends HttpService with ActorLogging {
               var auth = shait(profile.auth)
               if(profileMap(profile.id).auth != auth) {
                 //println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
-                println(profile.auth + " is not allowed to update profile of user " +profileMap(profile.id))
+                println(profile.auth + " is not allowed to update profile of user " + profileMap(profile.id))
                 complete(StatusCodes.Unauthorized)
               } else {
                 profileMap(profile.id) = profile
                 //println("-> Profile with id " + profile.id + " updated!")
                 complete("Profile with id " + profile.id + " updated!")
               }
-            } else {// Creating a user profile 
+            } else {
+              // Creating a user profile 
+              var arrBytes = new Array[Byte](20)
               val random = new scala.util.Random(new java.security.SecureRandom())
-              
-              def randomString(alphabet: String)(n: Int): String = 
+              random.nextBytes(arrBytes)
+              var uuid = new String(arrBytes)
+              /*def randomString(alphabet: String)(n: Int): String = 
                   Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
 
               def randomAlphanumericString(n: Int) = 
                   randomString("abcdefghijklmnopqrstuvwxyz0123456789")(n)
               
-              var uuid = randomAlphanumericString(20)
+              var uuid = randomAlphanumericString(20)*/
 
               var digest = shait(uuid)
+
               val newProfile = new Profile(digest, profile.id, profile.bio, profile.birthday,
               profile.email, profile.first_name, profile.gender,
               profile.hometown, profile.interested_in, profile.languages, profile.last_name,
