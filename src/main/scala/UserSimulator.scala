@@ -380,6 +380,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 }
 
                 var decrypted = rsadecrypt(photo.image, photo.encKey, publicKey)
+                publicKey = null
                 //println("Decrypted Photo name is  " + new String(decrypted))  
 
                 println("Decryption Successful")
@@ -493,6 +494,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
               var decryptedBdy = rsadecrypt(profile.birthday.getBytes, profile.encKey, publicKey)
               var decryptedEmail = rsadecrypt(profile.email.getBytes, profile.encKey, publicKey)
+              publicKey = null
 
               println("Birthday: " + profile.birthday + " --> " + new String(decryptedBdy))
               println("Email: " + profile.email + " --> " + new String(decryptedEmail))
@@ -674,6 +676,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
               }
 
               var decrypted = rsadecrypt(status.message.getBytes, status.encKey, publicKey)
+              publicKey = null
               println("Status: " + status.message + " --> " + new String(decrypted))
 
               println("id = " + status.id + "\n" +
@@ -788,7 +791,8 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
               // DECRYPT EMAIL
               var decrypted = rsadecrypt(page.email.getBytes, page.encKey, publicKey)
-
+              publicKey = null
+              
 		          println("auth = " + page.auth + "\n" +
 		                  "id = " + page.id + "\n" +
 		                  "about = " + page.about + "\n" +

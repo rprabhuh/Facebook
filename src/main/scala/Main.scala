@@ -70,7 +70,7 @@ object Main extends App with MySslConfiguration {
       var numAlbumsCreated = 0
 
       //30% of users create albums
-      for (i <- 0 until NETWORK_SIZE) {
+      for (i <- 1 until NETWORK_SIZE) {
         if (i%30 == 0)  { 
           fbUsers(i) ? CreateAlbum
           numAlbumsCreated += 1
@@ -95,20 +95,18 @@ object Main extends App with MySslConfiguration {
 
      //   if (i%10 == 0)
      //   Everyone Updates their statuses
-          fbUsers(i) ! CreateComment(ObjectType.ALBUM, tmp.toString)
+          //fbUsers(i) ! CreateComment(ObjectType.ALBUM, tmp.toString)
 
-        if (numAlbumsCreated > 1)
+/*        if (numAlbumsCreated > 1)
           tmp = abs(R.nextInt()%numAlbumsCreated)
         if (tmp == 0) tmp = 1
-        else
+        else*/
           tmp = 1
 
         //20% of users upload photos
-        if (i%30 == 0) fbUsers(i) ? UploadPhoto("1.png", "1")
-
-        if (i%30 == 0) fbUsers(i) ? UploadPhoto("2.png", tmp.toString)
-
-        if (i%50 == 0) fbUsers(i) ? UploadPhoto("3.png", tmp.toString)
+        fbUsers(30) ? UploadPhoto("1.png", "1")
+        //fbUsers(60) ? UploadPhoto("2.png", "2")
+        //fbUsers(90) ? UploadPhoto("3.png", "3")
 
         //Everyone sends friend request to at least one other person
         //if (i !=0 && i%20 == 0) 
@@ -124,11 +122,11 @@ object Main extends App with MySslConfiguration {
         if (i%1 == 0) 
           fbUsers(i) ! UpdateComment("1", ObjectType.ALBUM, "1")
         //50% of users delete their own comments
-        if (i%50 == 0) 
+        /*if (i%50 == 0) 
           fbUsers(i) ! DeleteComment("2")
         //1% of users delete their own comment
         if (i%90 == 0) 
-          fbUsers(i) ! DeleteComment(tmp.toString) 
+          fbUsers(i) ! DeleteComment(tmp.toString)*/ 
         //1% of all users see albums that do not exist
         if (i%100 == 0) 
           fbUsers(i) ! GetAlbum("189783748374389")
@@ -139,8 +137,8 @@ object Main extends App with MySslConfiguration {
         if (i%40 == 0) 
           fbUsers(i) ! GetPhoto("12379872834")
         //20% of users see other's photos
-        if (i%30 == 0) 
-          fbUsers(i) ! GetPhoto("1") 
+        //if (i%30 == 0) 
+          fbUsers(30) ! GetPhoto("1") 
         //2% of all users see other's profiles that do not exist
         if (i%50 == 0) 
           fbUsers(0) ! GetProfile("1023789748")
