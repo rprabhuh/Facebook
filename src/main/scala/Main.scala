@@ -2,12 +2,13 @@ import akka.actor._
 import akka.pattern.ask
 import akka.io.IO
 import spray.can.Http
+import spray.can.client._
 import akka.util.Timeout
 
 import ObjectType._
 
 
-object Main extends App {
+object Main extends App with MySslConfiguration {
   override def main(args: Array[String]) { 
 
     //Take in the command line for the number of users.
@@ -16,7 +17,7 @@ object Main extends App {
       System.exit(1)
     }*/
 
-    var NETWORK_SIZE = 5 //args(0).toInt
+    var NETWORK_SIZE = 100 //args(0).toInt
 
     implicit val system = ActorSystem("facebook")
 
@@ -27,7 +28,11 @@ object Main extends App {
     val port = 8080
 
     implicit val executionContext = system.dispatcher
-    implicit val timeout = Timeout(10)
+    implicit val timeout = Timeout(500000)
+
+    //val setup =  Http.Connect("localhost", 443, sslEncryption = true) 
+    //IO(Http) ? Http.Connect("localhost", 443, sslEncryption = true) 
+    //(IO(Http) ? (Post( uri=Uri(url), content="my content"), setup)) 
 
     IO(Http).ask(Http.Bind(listener = api, interface = host, port = port))
       .mapTo[Http.Event]
@@ -74,6 +79,7 @@ object Main extends App {
       
       Thread sleep(500)
       fbUsers(1) ? CreateComment(ObjectType.ALBUM, "1")
+      fbUsers(2) ! CreateComment(ObjectType.PAGE, "2")
       
       import scala.util.Random
       import scala.math.abs
@@ -81,11 +87,11 @@ object Main extends App {
       var tmp: Int = 0
       for(i <- 1 until NETWORK_SIZE) {
 
-      	/*import system.dispatcher
-      	//This will schedule to send <message>
-		//to the <actor> after 0ms repeating every 50ms
-      	val cancellable = system.scheduler.schedule(0 milliseconds,
-      		50 milliseconds, <actor>, <message>)*/
+        /*import system.dispatcher
+        //This will schedule to send <message>
+    //to the <actor> after 0ms repeating every 50ms
+        val cancellable = system.scheduler.schedule(0 milliseconds,
+          50 milliseconds, <actor>, <message>)*/
 
      //   if (i%10 == 0)
      //   Everyone Updates their statuses
