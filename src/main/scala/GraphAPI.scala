@@ -47,6 +47,7 @@ trait GraphAPI extends HttpService with ActorLogging {
     val PAGE = "PAGE"
     val PHOTO = "PHOTO"
     val STATUS = "STATUS"
+    val PROFILE = "PROFILE"
 
     var numalbums = 0
     var numstatus = 0
@@ -54,6 +55,66 @@ trait GraphAPI extends HttpService with ActorLogging {
     var numphotos = 0
     var numComments = 0
     var numOC = 0
+
+    def hasAccess(objectType: String,user: String, objectid: String):Boolean = {
+      if(objectType.equals(PAGE)) {
+        if(pageMap.contains(objectid)) {
+          var pageMembers = pageMap(objectid).members
+          if(pageMembers.contains(user)) {
+            return true
+          } else {
+            return false
+          }
+        } else {
+          return false
+        }
+      } else  if(objectType.equals(ALBUM)) {
+        if(albumMap.contains(objectid)) {
+          var Members = albumMap(objectid).privacy
+          if(Members.contains(user)) {
+            return true
+          } else {
+            return false
+          }
+        } else {
+          return false
+        }
+      } else if(objectType.equals(STATUS)) {
+        if(statusMap.contains(objectid)) {
+          var Members = statusMap(objectid).privacy
+          if(Members.contains(user)) {
+            return true
+          } else {
+            return false
+          }
+        } else {
+          return false
+        }
+      } else if(objectType.equals(PHOTO)) {
+        if(photoMap.contains(objectid)) {
+          var Members = photoMap(objectid).privacy
+          if(Members.contains(user)) {
+            return true
+          } else {
+            return false
+          }
+        } else {
+          return false
+        }
+      } else if(objectType.equals(PROFILE)) {
+        if(profileMap.contains(objectid)) {
+          var Members = profileMap(objectid).privacy
+          if(Members.contains(user)) {
+            return true
+          } else {
+            return false
+          }
+        } else {
+          return false
+        }
+      }
+      return false
+    }
 
     def shait(uuid: String): String =  {
       val sha = MessageDigest.getInstance("SHA-256")
@@ -337,15 +398,22 @@ trait GraphAPI extends HttpService with ActorLogging {
           if(profileMap.contains(from)) {
             var auth = shait(page.auth)
             if(auth != profileMap(from).auth) {
+
               println("-> Couldn't retrieve Page with id " + page.id + ". Authentication Issue ")
               complete(StatusCodes.Unauthorized)
             } else {
-              println("-> PAGE: GET request received for id " + page.id)
-              if(pageMap.contains(page.id)) {
-                complete {pageMap(page.id)}
+              if(hasAccess(PAGE, from, page.id)) {
+                println("-> PAGE: GET request received for id " + page.id)
+                if(pageMap.contains(page.id)) {
+                  complete {pageMap(page.id)}
+                } else {
+                  println("-> Page with id " + page.id + " not found")
+                  complete(StatusCodes.NotFound)
+                }
               } else {
-                println("-> Page with id " + page.id + " not found")
-                complete(StatusCodes.NotFound)
+              println("-> Couldn't retrieve Page with id " + page.id + ". Authentication Issue ")
+              complete(StatusCodes.Unauthorized)
+
               }
             }
           } else {
@@ -464,8 +532,9 @@ trait GraphAPI extends HttpService with ActorLogging {
             var auth = shait(photo.auth)
             if(auth != profileMap(from).auth) {
                 println("-> Cannot access Photo with id " +photo.id+ ". Authentication Failure")
-                complete(StatusCodes.NotFound)
+                complete(StatusCodes.Unauthorized)
             } else { 
+              if(hasAccess(PHOTO, from, photo.id)) {
               println("-> GET request received for id " + photo.id)
               if(photoMap.contains(photo.id)) {
                 complete {photoMap(photo.id)} 
@@ -474,6 +543,10 @@ trait GraphAPI extends HttpService with ActorLogging {
                 println("-> Photo with id " + photo.id + " cannot be found.")
                 complete(StatusCodes.NotFound)
               }
+            } else {
+                println("-> Cannot access Photo with id " +photo.id+ ". Authentication Failure")
+                complete(StatusCodes.Unauthorized)
+            }
             }
            } else {//else for profileMap.contains
               println("-> Photo with id " + photo.id + " cannot be found.")
@@ -517,7 +590,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                       photo.album, format.format(new java.util.Date()),
                       photo.from, photo.image, photo.link, photo.name,
                       format.format(new java.util.Date()), photo.place,
-                      photo.user_comments, photo.user_likes, numOC.toString, photo.encKey)
+                      photo.user_comments, photo.user_likes, numOC.toString, photo.encKey, photo.privacy)
                     photoMap(numphotos.toString) = newPhoto
                     var tempObj = albumMap(photo.album)
                     tempObj.photos = tempObj.photos :+ newPhoto.id
@@ -590,12 +663,17 @@ trait GraphAPI extends HttpService with ActorLogging {
                   println("-> Could not access status with id " + status.id + ". Authentication issue")
                   complete(StatusCodes.Unauthorized)
               } else {
+              if(hasAccess(STATUS, from, status.id)) {
                 if(statusMap.contains(status.id)) {
                   complete {statusMap(status.id)}
                 } else {
                   println("-> Status with id " + status.id + " was not found")
                   complete(StatusCodes.NotFound)
                 }
+              } else {
+                  println("-> Could not access status with id " + status.id + ". Authentication issue")
+                  complete(StatusCodes.Unauthorized)
+              }
               }
             } else {// ProfileMap.contains
                   println("-> Could not access status with id " + status.id + ". Authentication issue")
@@ -624,7 +702,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                   format.format(new java.util.Date()),
                   status.from, status.location, status.message,
                   format.format(new java.util.Date()),
-                  numOC.toString(), status.encKey)
+                  numOC.toString(), status.encKey, status.privacy)
                 statusMap(numstatus.toString) = newStatus
                 //println("-> Status" + status.from + ":Status Changed= " + status.message) 
                 complete("-> Status" + status.from + ": Status Changed = " + status.message)
@@ -736,6 +814,7 @@ trait GraphAPI extends HttpService with ActorLogging {
                 println("-> Comment with id " + profile.id + " Not found")
                 complete(StatusCodes.Unauthorized)
               } else { 
+              if(hasAccess(PROFILE, from, profile.id)) {
                 if (objectCommentsMap.contains(profile.id)) {
                   //println("-> PROFILE: GET request received for id " + id)
                   if(profileMap.contains(profile.id)) {
@@ -749,6 +828,10 @@ trait GraphAPI extends HttpService with ActorLogging {
                   println("-> Profile with id " + profile.id + " was not found")
                   complete(StatusCodes.NotFound) 
                 }
+              } else {
+                println("-> Comment with id " + profile.id + " Not found")
+                complete(StatusCodes.Unauthorized)
+              }
               }
             } else {
               println("-> Profile with id " + profile.id + " was not found")
@@ -787,7 +870,7 @@ trait GraphAPI extends HttpService with ActorLogging {
               profile.hometown, profile.interested_in, profile.languages, profile.last_name,
               profile.link, profile.location, profile.middle_name,
               profile.relationship_status, profile.significant_other,
-              profile.updated_time, profile.website, profile.cover, profile.encKey)
+              profile.updated_time, profile.website, profile.cover, profile.encKey, profile.privacy)
 
             profileMap(profile.id) = newProfile
             println("-> PROFILE created with id = " + newProfile.id)

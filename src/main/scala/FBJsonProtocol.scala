@@ -44,7 +44,9 @@ case class Profile (
     var updated_time: String,
     var website: String,
     var cover: String,
-    var encKey: Array[Byte]
+    var encKey: Array[Byte],
+    var privacy: Array[String]
+    //FriendlistObject
   )
 
 case class Status (
@@ -56,7 +58,8 @@ case class Status (
     var message: String,        //enc
     var updated_time: String,
     var OCid: String,
-    var encKey: Array[Byte]
+    var encKey: Array[Byte],
+    var privacy: Array[String]
   )
 
 
@@ -78,7 +81,7 @@ case class Album (
     var location: String,
     var name: String,
     var place: String,
-    var privacy: String,
+    var privacy: Array[String], //make this array of string
     var updated_time: String,
     var photos: Array[String],
     var OCid: String
@@ -98,7 +101,9 @@ case class Photo (
     var user_comments: Array[String],
     var user_likes: Array[String],
     var OCid: String,
-    var encKey: Array[Byte]
+    var encKey: Array[Byte],
+    var privacy: Array[String]
+    //ACL - Make user_likes as privacy
 )
 
 case class Comment (
@@ -143,10 +148,10 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
 
     implicit val albumFormat = jsonFormat15(Album)
     implicit val pageFormat = jsonFormat17(Page.apply)
-    implicit val profileFormat = jsonFormat20(Profile.apply)
-    implicit val statusFormat = jsonFormat9(Status.apply)
+    implicit val profileFormat = jsonFormat21(Profile.apply)
+    implicit val statusFormat = jsonFormat10(Status.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)
-    implicit val photoFormat = jsonFormat14(Photo.apply)
+    implicit val photoFormat = jsonFormat15(Photo.apply)
     implicit val commentFormat = jsonFormat9(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat3(FriendReqest.apply)
     implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)

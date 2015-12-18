@@ -231,7 +231,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         val A = new Album(myAuthString, "null", 0, "33", "12:23:12", "description: String",
                           self.path.name, "link: String", "location: String", "name: String",
-                          "place: String", "privacy: String", "null", Array("cover_photo"),"-1")
+                          "place: String", Array("privacy: String"), "null", Array("cover_photo"),"-1")
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         response onComplete {
@@ -291,7 +291,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         var A = new Album(myAuthString, id, 12, "cover_photo", "time", "description: String",
           self.path.name, "link: String", "location: String", "name: String", "place: String",
-          "privacy: String", "null", Array("cover_photo"), "1" )
+          Array("privacy: String"), "null", Array("cover_photo"), "1" )
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Album", A))
         response onComplete {
@@ -337,7 +337,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         import FBJsonProtocol._
         var A = new Photo(myAuthString, "null", album_id, "created_time", self.path.name, enc.data,
-                          "link", id, "updated_time", "place", list, list, "-1", enc.key)
+                          "link", id, "updated_time", "place", list, list, "-1", enc.key, Array("1", "2","3"))
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Photo", A))
         response onComplete {
@@ -448,7 +448,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			    "first_name", "gender", "hometown",
 			    Array("interested_in"), Array("languages"), "last_name", "link",
 			    "location", "middle_name", "relationship_status", "significant_other",
-          "updated_time", "website", "cover", encEmail.key)
+          "updated_time", "website", "cover", encEmail.key, Array("1", "2", "3"))
 
 		  val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
 		  response onComplete {
@@ -533,7 +533,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			new String(encEmail.data), "first_name", "gender", "hometown",
 			Array("interested_in"), Array("languages"), "last_name", "link",
 			"location", "middle_name", "relationship_status", "significant_other",
-      "updated_time", "website", "cover", encEmail.key)
+      "updated_time", "website", "cover", encEmail.key, Array("1", "2", "3"))
 
 
 		val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Profile", P))
@@ -695,7 +695,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     	import FBJsonProtocol._
     	var S = new Status(myAuthString, "null", "now", self.path.name, "location",
                     new String(encStatus.data),
-                  	"time again", "-1", encStatus.key)
+                  	"time again", "-1", encStatus.key, Array("1","2","3"))
     	
       val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))  
     	response onComplete {
@@ -715,9 +715,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 " --> encrypted to " + new String(encStatus.data))
 
     import FBJsonProtocol._
-    var S = new Status("myAuthString", id, "now", self.path.name, "location",
-             new String(encStatus.data),
-            	"time again", "-1", encStatus.key)
+    var S = new Status(myAuthString, "null", "now", self.path.name, "location",
+                    new String(encStatus.data),
+                  	"time again", "-1", encStatus.key, Array("1","2","3"))
 
     	val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Status", S))
     	response onComplete {
@@ -751,7 +751,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         var P = new Page(myAuthString, "null", "about", true, "cover", "description",
                 new String(encEmail.data),
                 12, "link", "location", self.path.name, "name", "parent_page",
-                Array("likes"), Array("members"), "-1", encEmail.key)
+                Array("likes"), Array("1","2","3"), "-1", encEmail.key)
 
         val response: Future[HttpResponse] = pipeline(Post("http://localhost:8080/Page", P))
         response onComplete {
