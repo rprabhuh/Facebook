@@ -2,7 +2,7 @@ import spray.routing._
 import spray.json._
 import spray.httpx._
 import spray.http._
-
+import scala.collection.concurrent.TrieMap
 
 case class Page (
     var auth: String,
@@ -101,6 +101,25 @@ case class Photo (
     var user_comments: Array[String],
     var user_likes: Array[String],
     var OCid: String,
+    var encKey: Array[Array[Byte]],
+    var privacy: Array[String]
+    //ACL - Make user_likes as privacy
+)
+
+case class ServerPhoto (
+    var auth: String,
+    id: String,
+    var album: String,
+    var created_time: String,
+    var from: String,
+    var image: Array[Byte], //enc
+    var link: String,
+    var name: String,
+    var updated_time: String,
+    var place: String,
+    var user_comments: Array[String],
+    var user_likes: Array[String],
+    var OCid: String,
     var encKey: Array[Byte],
     var privacy: Array[String]
     //ACL - Make user_likes as privacy
@@ -152,6 +171,7 @@ object FBJsonProtocol extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val statusFormat = jsonFormat10(Status.apply)
     implicit val friendListFormat = jsonFormat2(FriendList.apply)
     implicit val photoFormat = jsonFormat15(Photo.apply)
+    implicit val serverPhotoFormat = jsonFormat15(ServerPhoto.apply)
     implicit val commentFormat = jsonFormat9(Comment.apply)
     implicit val FriendReqestFormat = jsonFormat3(FriendReqest.apply)
     implicit val objectCommentsFormat = jsonFormat4(ObjectComments.apply)

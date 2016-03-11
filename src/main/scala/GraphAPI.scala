@@ -537,7 +537,15 @@ trait GraphAPI extends HttpService with ActorLogging {
               if(hasAccess(PHOTO, from, photo.id)) {
               println("-> GET request received for id " + photo.id)
               if(photoMap.contains(photo.id)) {
-                complete {photoMap(photo.id)} 
+                var some = photoMap(photo.id)
+                var P = new ServerPhoto(some.auth, numphotos.toString,
+                      some.album, format.format(new java.util.Date()),
+                      some.from, some.image, some.link, some.name,
+                      format.format(new java.util.Date()), some.place,
+                      some.user_comments, some.user_likes, numOC.toString,
+                      some.encKey(0), some.privacy)
+
+                complete {P} 
               } else {
                 // Error description in photo.name
                 println("-> Photo with id " + photo.id + " cannot be found.")
@@ -856,7 +864,7 @@ trait GraphAPI extends HttpService with ActorLogging {
             } else {
               // Creating a user profile 
               var arrBytes = new Array[Byte](20)
-              val random = new scala.util.Random(new java.security.SecureRandom())
+              val random = new java.security.SecureRandom()
               random.nextBytes(arrBytes)
               var uuid = new String(arrBytes)
               /*def randomString(alphabet: String)(n: Int): String = 
@@ -925,7 +933,7 @@ trait GraphAPI extends HttpService with ActorLogging {
           	// Flip a coin to decide if the friend request shoule be accepted
           	import scala.util.Random
           	var randObj = new Random()
-          	var frAccOrRej = randObj.nextInt() % 2
+          	var frAccOrRej = 1 //randObj.nextInt() % 2
           	if (frAccOrRej == 0) {
           		//println(fr.toid + " declined " + fr.fromid + " friend request.")
           		complete(fr.toid + " declined " + fr.fromid + " friend request.")

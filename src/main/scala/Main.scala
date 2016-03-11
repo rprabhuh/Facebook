@@ -17,7 +17,7 @@ object Main extends App with MySslConfiguration {
       System.exit(1)
     }*/
 
-    var NETWORK_SIZE = 100 //args(0).toInt
+    var NETWORK_SIZE = 5 //args(0).toInt
 
     implicit val system = ActorSystem("facebook")
 
@@ -55,7 +55,7 @@ object Main extends App with MySslConfiguration {
       // Create actors for simulation
       var fbUsers: Array[ActorRef] = new Array[ActorRef](NETWORK_SIZE)
 
-      for (i <- 0 until NETWORK_SIZE) {
+      for (i <- 1 until NETWORK_SIZE) {
         fbUsers(i) = system.actorOf(Props(new UserSimulator(system)), name = i.toString)
         
         //All the actors create their facebook profile
@@ -70,22 +70,30 @@ object Main extends App with MySslConfiguration {
       var numAlbumsCreated = 0
 
       //30% of users create albums
-      for (i <- 1 until NETWORK_SIZE) {
+      for (i <- 100 until NETWORK_SIZE) {
         if (i%30 == 0)  { 
           fbUsers(i) ? CreateAlbum
           numAlbumsCreated += 1
         }
       }
       
-      Thread sleep(500)
-      fbUsers(1) ? CreateComment(ObjectType.ALBUM, "1")
-      fbUsers(2) ! CreateComment(ObjectType.PAGE, "2")
-      
+      //Thread sleep(500)
+      fbUsers(1) ? AddFriend("2")
+      fbUsers(1) ? AddFriend("3")
+
+      Thread sleep(1000)
+      fbUsers(1) ? CreateAlbum
+      Thread sleep(2000)
+      fbUsers(1) ? UploadPhoto("1.png", "1")
+      Thread sleep(2000)
+      fbUsers(2) ? GetPhoto("1")
+
+
       import scala.util.Random
       import scala.math.abs
       var R = new Random()
       var tmp: Int = 0
-      for(i <- 1 until NETWORK_SIZE) {
+      for(i <- 1000 until NETWORK_SIZE) {
 
         /*import system.dispatcher
         //This will schedule to send <message>

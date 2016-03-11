@@ -25,8 +25,6 @@ import MediaTypes._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
 
 import java.io._
 import java.io.ByteArrayInputStream
@@ -38,7 +36,6 @@ import java.math.BigInteger
 import java.security._
 import java.security.spec._
 import java.security.Key
-import java.security.spec._
 import java.security.spec.X509EncodedKeySpec
 import java.security.interfaces._
 
@@ -48,6 +45,7 @@ import javax.crypto.spec._
 import javax.crypto.spec.SecretKeySpec
 import com.sun.crypto.provider.SunJCE
 import javax.crypto.interfaces._
+import scala.collection.concurrent.TrieMap
 
 import ObjectType._
 
@@ -80,6 +78,7 @@ case class RequestPublicKey(publicKey: Array[Byte])
 case class RSAPublicKey(dhKey: Array[Byte], rsaKey:Array[Byte])
 case class AliceKey(enc: Array[Byte], agree: KeyAgreement)
 case class Encrypted(data: Array[Byte], key: Array[Byte])
+case class GetPublicKey()
 
 
 class UserSimulator(systemArg: ActorSystem) extends Actor {
@@ -130,13 +129,19 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
   val prime:BigInt = BigInt(BigInteger.valueOf(23))
   val generator:BigInt = 5
   val system = systemArg
-  val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+
+  val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
+  //println("\nCreated profile for " + self.path.name + " -- " + keyPair.getPublic())
+
   var AESCipher = Cipher.getInstance("DES/ECB/PKCS5Padding")
   var cipher = Cipher.getInstance("RSA")
-  implicit val timeout = Timeout(5000)
+  implicit val timeout = Timeout(50000)
   val pipeline:HttpRequest => Future[HttpResponse] = sendReceive ~> unmarshal[HttpResponse]
   var future:Future[Any]= null
   val url = "https://localhost:8080/"
+
+  var pubKeyMap = new TrieMap[String, PublicKey]
+  var photoID: Int = -1
 
   // ENCRYPT using the PRIVATE key
   def rsaencrypt(plaintext: Array[Byte], AESStringKey: String): Encrypted = {
@@ -144,7 +149,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
       var keyFactory = SecretKeyFactory.getInstance("DES");
       var AESKey = keyFactory.generateSecret(keySpec)
       AESCipher.init(Cipher.ENCRYPT_MODE, AESKey)
-	    var encryptedBytes = AESCipher.doFinal(plaintext)
+	  var encryptedBytes = AESCipher.doFinal(plaintext)
 
       val encryptedData = Base64.getEncoder().encode(encryptedBytes)
 
@@ -155,9 +160,30 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
       return new Encrypted(encryptedData, encryptedKey)
   }  
 
+// ENCRYPT using the PRIVATE key
+  def rsaencryptPhoto(plaintext: Array[Byte], AESStringKey: String, pubKey: PublicKey): Encrypted = {
+      var keySpec = new DESKeySpec(AESStringKey.getBytes("UTF-8"))
+      var keyFactory = SecretKeyFactory.getInstance("DES");
+      var AESKey = keyFactory.generateSecret(keySpec)
+      AESCipher.init(Cipher.ENCRYPT_MODE, AESKey)
+      var encryptedBytes = AESCipher.doFinal(plaintext)
+
+      val encryptedData = Base64.getEncoder().encode(encryptedBytes)
+
+      cipher.init(Cipher.ENCRYPT_MODE, pubKey)
+      encryptedBytes = cipher.doFinal(AESKey.getEncoded())
+      val encryptedKey = Base64.getEncoder().encode(encryptedBytes)
+      //val encryptedKey = encryptedBytes
+
+      /*println("\nEncrypt Photo: Encrypted AESKey " + AESStringKey + " --> " +
+      			encryptedKey + " using " + pubKey)*/
+
+      return new Encrypted(encryptedData, encryptedKey)
+  }
+
   // DECRYPT using the PUBLIC key
   def rsadecrypt(ciphertext: Array[Byte], pubKey: Array[Byte], publicKey: PublicKey): Array[Byte] = {
-        cipher.init(Cipher.DECRYPT_MODE, publicKey)
+        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate())
         var keyBytes = Base64.getDecoder().decode(pubKey)
         val AESKeyBytes = cipher.doFinal(keyBytes)
         
@@ -166,6 +192,10 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         var AESKey = kf.generateSecret(keySpec);
 
         AESCipher.init(Cipher.DECRYPT_MODE, AESKey)
+
+      	/*println("\nDecrypt Photo: Decrypted " + new String(pubKey) + " --> " +
+      			new String(AESKeyBytes) + " using " + keyPair.getPrivate())*/
+
         return AESCipher.doFinal(Base64.getDecoder().decode(ciphertext))
         //return AESCipher.doFinal(ciphertext)
   }
@@ -180,7 +210,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     AliceKey(alicePubKeyEnc, aliceKeyAgree)
   }
 
-  def generateSecretKey(otherkey:RSAPublicKey, aliceKeyAgree:KeyAgreement): PublicKey= {
+def generateSecretKey(otherkey:RSAPublicKey, aliceKeyAgree:KeyAgreement): PublicKey= {
     var aliceKeyFac = KeyFactory.getInstance("DH");
     var x509KeySpec = new X509EncodedKeySpec(otherkey.dhKey);
     var bobPubKey = aliceKeyFac.generatePublic(x509KeySpec);
@@ -195,9 +225,13 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
     var recovered:Array[Byte] = aliceCipher.doFinal(otherkey.rsaKey);
                 
     KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(recovered));
-  }
+}
 
   def receive = { 
+    case GetPublicKey =>
+      //println("Getting public key from " + self.path.name + " --> " + keyPair.getPublic())
+      sender ! keyPair.getPublic()
+
     case RequestPublicKey(otherkey) =>
       var bobKeyFac = KeyFactory.getInstance("DH")
       var x509KeySpec = new X509EncodedKeySpec(otherkey)
@@ -241,10 +275,9 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         	case Failure(error) =>
         		println("ERROR while creating album: " + error)
-        }
+    	}
 
-
-      case GetAlbum(id) =>
+    case GetAlbum(id) =>
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting an Album with id = " + id)
 
@@ -283,7 +316,6 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         		 ": " + error)
         }
 
-
     case UpdateAlbum(id) =>
         println("User " + self.path.name + " Updating an Album with id = " + id)
 
@@ -302,7 +334,6 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         		println("ERROR while updating album " + id + " : " + error)
         }
 
-
     case DeleteAlbum(id) =>
     	println("User " + self.path.name + " deleting Album " + id)
         import FBJsonProtocol._
@@ -315,7 +346,6 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         	case Failure(error) =>
         		println("ERROR while deleting album " + id + " : " + error)
         }
-
 
 
     case UploadPhoto(id, album_id) =>
@@ -332,12 +362,38 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         val list = Array("a","b","c")
 
-        val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-        val enc = rsaencrypt(bytearray, AESStringKey)
+        val random = new java.security.SecureRandom()
+        def randomString(alphabet: String)(n: Int): String = 
+                  Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
+
+        def randomAlphanumericString(n: Int) = 
+                  randomString("abcdefghijklmnopqrstuvwxyz0123456789")(n)
+              
+        var AESStringKey = randomAlphanumericString(20)
+
+        //var pubKeys: Array[Array[Byte]] = new Array[Array[Byte]](4)
+        var enc: Encrypted = null
+        //for(i <- 1 to 3) {
+          val enc1 = rsaencryptPhoto(bytearray, AESStringKey, pubKeyMap("2"))
+          //println("\nEncrypted1: \nData = " + new String(enc1.data) + "\nKey = " + new String(enc1.key))
+
+          val enc2 = rsaencryptPhoto(bytearray, AESStringKey, pubKeyMap("3"))
+		  //println("\nEncrypted2: \nData = " + new String(enc2.data) + "\nKey = " + new String(enc2.key))
+
+          //var enc3 = rsaencryptPhoto(bytearray, AESStringKey, pubKeyMap("2"))
+          //pubKeys(i) = enc3.key
+
+          var pubKeys = Array(enc1.key, enc2.key)
+
+/*          var Ek:Array[Byte] = new Array[Byte](enc.key.size)
+          Ek = enc.key
+          pubKeys(i) = new Array(Ek)*/
+        //}
 
         import FBJsonProtocol._
-        var A = new Photo(myAuthString, "null", album_id, "created_time", self.path.name, enc.data,
-                          "link", id, "updated_time", "place", list, list, "-1", enc.key,
+        var A = new Photo(myAuthString, "null", album_id, "created_time", self.path.name, enc1.data,
+                          "link", id, "updated_time", "place", list, list, "-1",
+                          pubKeys,
                           Array(self.path.name, "1", "2","3"))
 
         val response: Future[HttpResponse] = pipeline(Post(url + "Photo", A))
@@ -354,18 +410,18 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         import FBJsonProtocol._
         println("User " + self.path.name + " Getting a Photo with id = " + id)
 
-        val pipeline: HttpRequest => Future[Photo] = (
+        val pipeline: HttpRequest => Future[ServerPhoto] = (
           sendReceive
-            ~> unmarshal[Photo]
+            ~> unmarshal[ServerPhoto]
           )
         val request = new GetRequest(myAuthString, self.path.name, id)
-        val response: Future[Photo] = pipeline(Get(url + "Photo",request))
+        val response: Future[ServerPhoto] = pipeline(Get(url + "Photo",request))
         response onComplete {
         	case Success(photo) =>
                 println("GET PHOTO SUCCESS CASE")
 
                 var publicKey: PublicKey = null
-                if (photo.from != self.path.name) {
+                /*if (photo.from != self.path.name) {
                   println(self.path.name + " requesting publicKey from " + photo.from)
                   val fromUser = context.actorFor("akka://facebook/user/" + photo.from)
                   var tempobject =  generatePubKey()
@@ -377,7 +433,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                 } else {
                   println(self.path.name + " accessing his own publicKey")
                   publicKey = keyPair.getPublic()
-                }
+                }*/
 
                 var decrypted = rsadecrypt(photo.image, photo.encKey, publicKey)
                 publicKey = null
@@ -428,6 +484,12 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         response onComplete {
         	case Success(addFr) =>
         		println(addFr.entity.asString)
+            val friend = context.actorFor("akka://facebook/user/" + id)
+            future = friend ? GetPublicKey
+            val otherkey = Await.result(future, timeout.duration).asInstanceOf[PublicKey]
+            /*println("pubKeyMap Contents: " + pubKeyMap)
+            println(id + " - Public Key: " + otherkey)*/
+            pubKeyMap(id) = otherkey
 
         	case Failure(error) =>
         		println("ERROR while sending friend request from " +
@@ -560,16 +622,16 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
         	case Failure(error) =>
         		println("ERROR while deleting profile : " + error)
-        }
+    	}
 
 	case CreateComment(objType, objId) =>
 		import FBJsonProtocol._
 
-    val comment = "This is " + self.path.name + "'s comment message!"
-    val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-    var encCom = rsaencrypt(comment.getBytes, AESStringKey)
+	    val comment = "This is " + self.path.name + "'s comment message!"
+	    val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
+	    var encCom = rsaencrypt(comment.getBytes, AESStringKey)
 
-      println("User " + self.path.name + " creating a comment: " + comment +
+      	println("User " + self.path.name + " creating a comment: " + comment +
                 " --> encrypted to " + new String(encCom.data))
 
 		println("User " + self.path.name + " commenting on Object " + objId)
@@ -577,19 +639,18 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 			new String(encCom.data), "parent", Array("user_comments"),
 			Array("user_likes"), encCom.key)
 
-    var response: Future[HttpResponse] = null
-    objType match {
-      case ObjectType.ALBUM => 
-		    response = pipeline(Post(url + "Album/comment", C))
+	    var response: Future[HttpResponse] = null
+	    objType match {
+	      case ObjectType.ALBUM => 
+			    response = pipeline(Post(url + "Album/comment", C))
 
-      case ObjectType.PHOTO => 
-        response = pipeline(Post(url + "Photo/comment", C))
+	      case ObjectType.PHOTO => 
+	        response = pipeline(Post(url + "Photo/comment", C))
 
-      case ObjectType.PAGE => 
-        response = pipeline(Post(url + "Page/comment", C))
-    }
+	      case ObjectType.PAGE => 
+	        response = pipeline(Post(url + "Page/comment", C))
+	    }
     
-
 		response onComplete {
         	case Success(crComment) =>
         		println(crComment.entity.asString)
@@ -690,10 +751,10 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
 
   case CreateStatus =>
     	val status = "This is User " + self.path.name + "'s status"
-      val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-      var encStatus = rsaencrypt(status.getBytes, AESStringKey)
+      	val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
+      	var encStatus = rsaencrypt(status.getBytes, AESStringKey)
 
-      println("User " + self.path.name + " creating a status: " + status +
+      	println("User " + self.path.name + " creating a status: " + status +
                 " --> encrypted to " + new String(encStatus.data))
 
     	import FBJsonProtocol._
@@ -701,7 +762,7 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
                     new String(encStatus.data),
                   	"time again", "-1", encStatus.key, Array(self.path.name,"1","2","3"))
     	
-      val response: Future[HttpResponse] = pipeline(Post(url + "Status", S))  
+      	val response: Future[HttpResponse] = pipeline(Post(url + "Status", S))  
     	response onComplete {
         	case Success(crStatus) =>
         		println(crStatus.entity.asString)
@@ -711,15 +772,15 @@ class UserSimulator(systemArg: ActorSystem) extends Actor {
         }
 
   case UpdateStatus(id) =>
-    val status = "User " + self.path.name + " is updating his status"
-    val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
-    var encStatus = rsaencrypt(status.getBytes, AESStringKey)
+    	val status = "User " + self.path.name + " is updating his status"
+    	val AESStringKey = scala.util.Random.alphanumeric.take(15).mkString
+    	var encStatus = rsaencrypt(status.getBytes, AESStringKey)
 
-    println("User " + self.path.name + " updating status to: " + status +
+    	println("User " + self.path.name + " updating status to: " + status +
                 " --> encrypted to " + new String(encStatus.data))
 
-    import FBJsonProtocol._
-    var S = new Status(myAuthString, "null", "now", self.path.name, "location",
+    	import FBJsonProtocol._
+    	var S = new Status(myAuthString, "null", "now", self.path.name, "location",
                     new String(encStatus.data),
                   	"time again", "-1", encStatus.key, Array(self.path.name,"1","2","3"))
 
